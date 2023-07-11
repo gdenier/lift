@@ -30,7 +30,7 @@ export const Sidebar = (): ReactElement | null => {
     >
       <p className="text-4xl font-bold">Lift</p>
       <nav className="h-full">
-        <ul className="flex flex-col">
+        <ul className="flex flex-col gap-4">
           <li>
             <Link
               href="/"
@@ -41,6 +41,18 @@ export const Sidebar = (): ReactElement | null => {
               suppressHydrationWarning
             >
               {state ? "Home" : "H"}
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/exercices"
+              className={buttonVariants({
+                variant: "secondary",
+                className: cn("w-full", state && "!justify-start"),
+              })}
+              suppressHydrationWarning
+            >
+              {state ? "Exercices" : "E"}
             </Link>
           </li>
         </ul>

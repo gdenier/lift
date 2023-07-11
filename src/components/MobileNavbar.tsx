@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ReactElement } from "react"
 import { buttonVariants } from "./ui/button"
-import { HomeIcon } from "lucide-react"
+import { HomeIcon, GalleryVerticalEnd } from "lucide-react"
 import { LogoutButton } from "./LogoutButton"
 
 export const MobileNavbar = (): ReactElement => {
@@ -14,6 +14,12 @@ export const MobileNavbar = (): ReactElement => {
         className={buttonVariants({ variant: "secondary", size: "icon" })}
       >
         <HomeIcon />
+      </Link>
+      <Link
+        href="/exercices"
+        className={buttonVariants({ variant: "secondary", size: "icon" })}
+      >
+        <GalleryVerticalEnd />
       </Link>
       <LogoutButton expanded={false} />
     </div>
