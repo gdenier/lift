@@ -1,10 +1,10 @@
 "use client"
 import { useState } from "react"
 import { useSignIn } from "@clerk/nextjs"
-import { useRouter } from "next/router"
 import { Label } from "~/components/ui/label"
 import { Input } from "~/components/ui/input"
 import { Button } from "~/components/ui/button"
+import { useRouter } from "next/navigation"
 
 export default function SignInForm() {
   const { isLoaded, signIn, setActive } = useSignIn()
