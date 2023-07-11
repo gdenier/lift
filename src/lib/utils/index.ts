@@ -50,20 +50,23 @@ export function formatTime(value: number): string {
       ? new Intl.NumberFormat("fr-FR", {
           style: "unit",
           unit: "hour",
+          unitDisplay: "narrow",
         }).format(hour)
       : ""
-  } ${
+  }${
     minute
       ? new Intl.NumberFormat("fr-FR", {
           style: "unit",
           unit: "minute",
+          unitDisplay: "narrow",
         }).format(minute)
       : ""
-  } ${
+  }${
     second
       ? new Intl.NumberFormat("fr-FR", {
           style: "unit",
           unit: "second",
+          unitDisplay: "narrow",
         }).format(second)
       : ""
   }`

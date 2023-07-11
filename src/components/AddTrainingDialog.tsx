@@ -56,14 +56,22 @@ export const AddTrainingDialog = ({
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <PlusSquare className="h-5 w-5" />
-            Créer un entrainement
+      {trigger || (
+        <>
+          <Button className="hidden sm:flex" asChild>
+            <DialogTrigger>
+              <PlusSquare className="h-5 w-5" />
+              <span>Créer un entrainement</span>
+            </DialogTrigger>
           </Button>
-        )}
-      </DialogTrigger>
+          <Button className="flex sm:hidden" size="icon" asChild>
+            <DialogTrigger>
+              <PlusSquare className="h-5 w-5" />
+              <span className="sr-only">Créer un entrainement</span>
+            </DialogTrigger>
+          </Button>
+        </>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Créer un nouvel entrainement</DialogTitle>

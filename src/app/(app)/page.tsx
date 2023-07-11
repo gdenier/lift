@@ -1,5 +1,8 @@
+import { auth } from "@clerk/nextjs"
+import { eq } from "drizzle-orm"
 import { ArrowRightSquare } from "lucide-react"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { AddTrainingDialog } from "~/components/AddTrainingDialog"
 import { Timer } from "~/components/Timer"
 import { buttonVariants } from "~/components/ui/button"
@@ -9,7 +12,12 @@ import { createTraining } from "~/lib/db/actions/trainings"
 import { trainings } from "~/lib/db/schema/trainings"
 
 export default async function Home() {
-  const data = await db.select().from(trainings)
+  const { userId } = auth()
+  if (!userId) redirect("/sign-in")
+  const data = await db
+    .select()
+    .from(trainings)
+    .where(eq(trainings.userId, userId))
 
   return (
     <div className="w-full">

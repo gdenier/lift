@@ -12,6 +12,9 @@ import { Exercice, editTrainingSchema } from "~/lib/db/schema"
 import { createFormData } from "~/lib/utils"
 import { MetadataFormPart } from "./MetadataFormPart"
 import { ExercicesFormPart } from "./ExercicesFormPart"
+import { Button, buttonVariants } from "~/components/ui/button"
+import Link from "next/link"
+import { StepBackIcon, Undo2 } from "lucide-react"
 
 export const EditTrainingForm = ({
   onSubmit,
@@ -42,9 +45,36 @@ export const EditTrainingForm = ({
         onSubmit={form.handleSubmit(handleSubmit)}
         className="flex flex-col gap-2"
       >
+        <div className="flex w-full items-center justify-between gap-2">
+          <h2 className="w-full text-2xl font-semibold leading-none tracking-tight">
+            {defaultValues.title}
+          </h2>
+          <div className="flex w-full justify-end gap-2">
+            <Link
+              href={`/trainings/${defaultValues.id}`}
+              className={buttonVariants({
+                variant: "outline",
+                size: "icon",
+              })}
+            >
+              <Undo2 />
+            </Link>
+            <SubmitButton isPending={isPending} text={false} />
+          </div>
+        </div>
         <MetadataFormPart />
         <ExercicesFormPart exercices={exercices} />
-        <SubmitButton isPending={isPending} />
+        <div className="flex w-full justify-end gap-2">
+          <Link
+            href={`/trainings/${defaultValues.id}`}
+            className={buttonVariants({
+              variant: "outline",
+            })}
+          >
+            Annuler
+          </Link>
+          <SubmitButton isPending={isPending} />
+        </div>
       </form>
     </Form>
   )

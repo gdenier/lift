@@ -175,7 +175,11 @@ const ExercicePanel = ({
           <p>({training_exerice.series?.length ?? 0} séries)</p>
         </Button>
       </SheetTrigger>
-      <SheetContent className="flex flex-col justify-between sm:max-w-md">
+      <SheetContent
+        className="flex flex-col justify-between max-md:max-h-[90dvh] sm:max-w-md"
+        side="bottom"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <SheetHeader>
           <SheetTitle className="first-letter:uppercase">
             {exercice.name}

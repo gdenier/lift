@@ -135,27 +135,19 @@ const ExerciceRow = ({ tExercice }: { tExercice: TrainingExercice }) => {
         </p>
       </div>
 
-      <div
-        className="grid max-w-fit gap-x-4 pl-14"
-        style={{
-          gridTemplateColumns: `auto repeat(${series.length}, 6rem)`,
-        }}
-      >
-        <History className="h-5 w-5" />
-        {series.map((serie, index) => (
-          <p key={`rep-${serie.id}${index}`}>{serie.repetition}</p>
-        ))}
-        <WeightIcon className="h-5 w-5" />
-        {series.map((serie, index) => (
-          <p key={`weight-${serie.id}${index}`}>
-            {formatWeight(serie.weight ?? 0)}
+      {series.map((serie, index) => (
+        <div
+          key={`serie-${serie.id}${index}`}
+          className="flex w-full max-w-md justify-between gap-2 md:gap-4 md:pl-14"
+        >
+          <p className="row-span-2 flex aspect-square h-6 w-6 shrink-0 items-center justify-center place-self-center rounded bg-secondary text-secondary-foreground">
+            {serie.order}
           </p>
-        ))}
-        <Timer className="h-5 w-5" />
-        {series.map((serie, index) => (
-          <p key={`rest-${serie.id}${index}`}>{formatTime(serie.rest)}</p>
-        ))}
-      </div>
+          <p className="flex-1">{serie.repetition}</p>
+          <p className="flex-1">{formatWeight(serie.weight ?? 0)}</p>
+          <p className="flex-1">{formatTime(serie.rest)}</p>
+        </div>
+      ))}
     </li>
   )
 }

@@ -25,7 +25,7 @@ export const Sidebar = (): ReactElement | null => {
 
   return (
     <div
-      className="flex flex-col justify-between gap-8 bg-primary px-4 py-8 text-primary-foreground data-[expanded=true]:w-[180px]"
+      className="hidden flex-col justify-between gap-8 bg-primary px-4 py-8 text-primary-foreground data-[expanded=true]:w-[180px] md:flex"
       data-expanded={state}
     >
       <p className="text-4xl font-bold">Lift</p>
