@@ -6,9 +6,7 @@ import { Button } from "./ui/button"
 import { PlayCircle, PauseCircle, StopCircle } from "lucide-react"
 
 export const Timer = (): ReactElement => {
-  const { time, isActive, pause, resume, start, stop } = useTimer({
-    onFinish: () => alert("finished"),
-  })
+  const { time, isActive, pause, resume, start, stop } = useTimer()
   return (
     <div>
       <p>{formatTime(time)}</p>
