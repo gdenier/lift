@@ -1,34 +1,32 @@
 "use server"
 
-import { ulid } from "ulid"
 import { revalidatePath } from "next/cache"
 import { withValidation } from "~/lib/utils/server"
 import {
+  TrainingExercice,
   createTrainingSchema,
   editTrainingSchema,
   trainings,
   trainings_exercices,
   trainings_series,
-} from "../schema/trainings"
+} from "../schema/trainings.schema"
 import { db } from ".."
-import { eq, inArray } from "drizzle-orm"
+import { eq, inArray, sql } from "drizzle-orm"
 import { z } from "zod"
 import { redirect } from "next/navigation"
 
 export const createTraining = withValidation(
   createTrainingSchema,
   async (data, user) => {
-    const newId = ulid()
-    await db.insert(trainings).values({
-      id: newId,
+    const inserted = (await db.insert(trainings).values({
       title: data.title,
       userId: user.id,
-    })
+    }).returning())[0]
 
     revalidatePath("/")
-    revalidatePath(`/trainings/${newId}`)
+    revalidatePath(`/trainings/${inserted.id}`)
 
-    return newId
+    return inserted.id
   }
 )
 
@@ -72,36 +70,37 @@ export const editTraining = withValidation(
 
     // INSERT NEW EXERCICE
     data.trainings_exercices?.forEach(async (tExercice) => {
-      const newId = ulid()
+      let inserted: Partial<TrainingExercice>
       if (!tExercice.id)
-        await db.insert(trainings_exercices).values({
-          id: newId,
+        inserted = (await db.insert(trainings_exercices).values({
           exerciceId: tExercice.exerciceId,
           trainingId: data.id,
           order: tExercice.order,
-        })
+        }).returning())[0]
 
       // UPSERT SERIE
       tExercice.series?.forEach(async (serie) => {
         await db
           .insert(trainings_series)
           .values({
-            id: serie.id ?? ulid(),
+            id: serie.id,
             repetition: serie.repetition ?? null,
             time: serie.time ?? null,
             rest: serie.rest,
             weight: serie.weight ?? null,
             order: serie.order,
-            trainingsExercicesId: tExercice.id ?? newId,
+            trainingsExercicesId: tExercice.id ?? inserted.id,
           })
-          .onDuplicateKeyUpdate({
-            set: {
+          .onConflictDoUpdate({
+            target: trainings_series.id,
+            set:{
               repetition: serie.repetition ?? null,
               time: serie.time ?? null,
               rest: serie.rest,
               weight: serie.weight ?? null,
               order: serie.order,
             },
+            // where: sql`${trainings_exercices.id} = ${serie.id}`
           })
       })
       // DELETE REMOVED SERIES

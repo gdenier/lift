@@ -1,26 +1,17 @@
-import {
-  datetime,
-  double,
-  float,
-  int,
-  primaryKey,
-  serial,
-  varchar,
-} from "drizzle-orm/mysql-core"
-import { id, table } from "./utils"
-import { zfd } from "zod-form-data"
+import { foreign_id, id, table } from "./utils"
 import { z } from "zod"
 import { InferModel, relations, sql } from "drizzle-orm"
-import { Exercice, exercices } from "./exercices"
-import { trainings } from "./trainings"
+import { Exercice, exercices } from "./exercices.schema"
+import { trainings } from "./trainings.schema"
+import { integer, primaryKey, real, timestamp, unique, varchar } from "drizzle-orm/pg-core"
 
 export const sessions = table("sessions", {
-  id: id("id").primaryKey(),
-  trainingId: id("trainingId").notNull(),
-  userId: varchar("userId", { length: 32 }).notNull(),
-  createdAt: datetime("createdAt")
+  id: id(),
+  trainingId: foreign_id("training_id").notNull(),
+  userId: varchar("user_id", { length: 32 }).notNull(),
+  createdAt: timestamp("date")
     .notNull()
-    .default(sql`NOW()`),
+    .defaultNow(),
 })
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
@@ -34,13 +25,13 @@ export const sessionsRelations = relations(sessions, ({ one, many }) => ({
 export const sessions_exercices = table(
   "sessions_exercices",
   {
-    id: id("id"),
-    sessionId: id("sessionId"),
-    exerciceId: id("exerciceId"),
-    order: int("order").notNull(),
+    id: id(),
+    sessionId: foreign_id("session_id").notNull(),
+    exerciceId: foreign_id("exercice_id").notNull(),
+    order: integer("order").notNull(),
   },
   (t) => ({
-    pk: primaryKey(t.id, t.exerciceId, t.sessionId),
+    unq: unique().on(t.id, t.exerciceId, t.sessionId),
   })
 )
 
@@ -62,15 +53,15 @@ export const sessions_exercicesRelations = relations(
 export const sessions_series = table(
   "sessions_exercices_series",
   {
-    id: id("id"),
-    sessionsExercicesId: id("sessionsExercicesId").notNull(),
-    weight: float("weight"),
-    repetition: int("repetition").notNull(),
-    rest: int("rest").notNull(), // in seconds
-    order: int("order").notNull(),
+    id: id(),
+    sessionsExercicesId: foreign_id("sessions_exercices_id").notNull(),
+    weight: real("weight"),
+    repetition: integer("repetition").notNull(),
+    rest: integer("rest").notNull(), // in seconds
+    order: integer("order").notNull(),
   },
   (t) => ({
-    pk: primaryKey(t.id, t.sessionsExercicesId),
+    unq: unique().on(t.id, t.sessionsExercicesId),
   })
 )
 

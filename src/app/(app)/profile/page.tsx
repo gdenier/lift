@@ -10,7 +10,7 @@ import {
 import { db } from "~/lib/db"
 import { formatUsername, formatWeight } from "~/lib/utils"
 import { AddProfileWeightForm } from "./AddProfileWeightForm"
-import { createWeight } from "~/lib/db/actions/profiles"
+import { createWeight } from "~/lib/db/actions/profiles.actions"
 import { WeightChart } from "./WeightChart"
 import { Button } from "~/components/ui/button"
 

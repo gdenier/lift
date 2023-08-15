@@ -1,7 +1,7 @@
 import { NotFound } from "~/components/NotFound"
 import { db } from "~/lib/db"
 import { EditTrainingForm } from "./EditTrainingForm"
-import { editTraining, deleteTraining } from "~/lib/db/actions/trainings"
+import { editTraining, deleteTraining } from "~/lib/db/actions/trainings.actions"
 import { editTrainingSchema } from "~/lib/db/schema"
 import { z } from "zod"
 import { auth } from "@clerk/nextjs"

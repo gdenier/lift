@@ -53,8 +53,6 @@ export const WeightInput = <
               placeholder="00"
               name={name}
               defaultValue={defaultValue}
-              max={max}
-              min={min}
               onChange={(e) => {
                 console.log(e.target.value)
                 const kg = +e.target.value.split(".")[0]

@@ -25,7 +25,7 @@ import {
   Form,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { createWeight } from "~/lib/db/actions/profiles"
+import { createWeight } from "~/lib/db/actions/profiles.actions"
 import { createProfileWeightSchema } from "~/lib/db/schema"
 import { useNotify } from "~/lib/toast"
 

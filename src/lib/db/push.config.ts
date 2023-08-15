@@ -7,9 +7,9 @@ dotenv.config({
 export default {
   schema: "./src/lib/db/schema/*",
   out: "./drizzle",
-  driver: "mysql2",
+  driver: "pg",
   dbCredentials: {
-    connectionString: `mysql://${process.env.DATABASE_USERNAME}:${process.env.DATABASE_PASSWORD}@${process.env.DATABASE_HOST}/yaot?ssl={"rejectUnauthorized":false}&sslcert=/etc/ssl/cert.pem`,
+    connectionString: process.env.DRIZZLE_DATABASE_URL as string,
   },
   tablesFilter: ["lift_*"],
 } satisfies Config

@@ -8,8 +8,8 @@ import { Timer } from "~/components/Timer"
 import { buttonVariants } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import { db } from "~/lib/db"
-import { createTraining } from "~/lib/db/actions/trainings"
-import { trainings } from "~/lib/db/schema/trainings"
+import { createTraining } from "~/lib/db/actions/trainings.actions"
+import { trainings } from "~/lib/db/schema/trainings.schema"
 
 export default async function Home() {
   const { userId } = auth()

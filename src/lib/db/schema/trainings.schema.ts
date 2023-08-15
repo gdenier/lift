@@ -1,23 +1,16 @@
-import {
-  double,
-  float,
-  int,
-  primaryKey,
-  serial,
-  varchar,
-} from "drizzle-orm/mysql-core"
-import { id, table } from "./utils"
+import { foreign_id, id, table } from "./utils"
 import { zfd } from "zod-form-data"
 import { z } from "zod"
 import { InferModel, relations } from "drizzle-orm"
-import { Exercice, exercices } from "./exercices"
-import { sessions } from "./sessions"
+import { Exercice, exercices } from "./exercices.schema"
+import { sessions } from "./sessions.schema"
+import { integer, primaryKey, real, unique, varchar } from "drizzle-orm/pg-core"
 
 // Entity
 export const trainings = table("trainings", {
-  id: id("id").primaryKey(),
+  id: id(),
   title: varchar("title", { length: 256 }).notNull(),
-  userId: varchar("userId", { length: 32 }).notNull(),
+  userId: varchar("user_id", { length: 32 }).notNull(),
 })
 
 // Relations
@@ -30,13 +23,13 @@ export const trainingsRelations = relations(trainings, ({ many }) => ({
 export const trainings_exercices = table(
   "trainings_exercices",
   {
-    id: id("id"),
-    trainingId: id("trainingId"),
-    exerciceId: id("exerciceId"),
-    order: int("order").notNull(),
+    id: id(),
+    trainingId: foreign_id("training_id").notNull(),
+    exerciceId: foreign_id("exercice_id").notNull(),
+    order: integer("order").notNull(),
   },
   (t) => ({
-    pk: primaryKey(t.id, t.exerciceId, t.trainingId),
+    unq: unique().on(t.id, t.exerciceId,t.trainingId),
   })
 )
 
@@ -64,16 +57,16 @@ export const trainings_exercicesRelations = relations(
 export const trainings_series = table(
   "trainings_exercices_series",
   {
-    id: id("id"),
-    trainingsExercicesId: id("trainingsExercicesId").notNull(),
-    weight: float("weight"),
-    repetition: int("repetition"),
-    time: int("time"),
-    rest: int("rest").notNull(), // in seconds
-    order: int("order").notNull(),
+    id: id(),
+    trainingsExercicesId: foreign_id("trainings_exercices_id").notNull(),
+    weight: real("weight"),
+    repetition: integer("repetition"),
+    time: integer("time"),
+    rest: integer("rest").notNull(), // in seconds
+    order: integer("order").notNull(),
   },
   (t) => ({
-    pk: primaryKey(t.id, t.trainingsExercicesId),
+    unq: unique().on(t.id, t.trainingsExercicesId),
   })
 )
 

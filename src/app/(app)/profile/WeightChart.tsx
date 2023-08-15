@@ -17,17 +17,17 @@ export const WeightChart = ({
     const parsedData = data.map((weight) => ({
       y: weight.value,
       x: weight.date.toLocaleString(),
-    }))
+    }))??[]
     return { id: "weight", color: "var(--primary)", data: parsedData }
   }, [data])
 
   const min = parsedData.data.reduce(
     (min, parsed) => (parsed.y < min ? parsed.y : min),
-    parsedData.data[0].y
+    parsedData.data[0]?.y??0
   )
   const max = parsedData.data.reduce(
     (max, parsed) => (parsed.y > max ? parsed.y : max),
-    parsedData.data[0].y
+    parsedData.data[0]?.y??0
   )
 
   const format = (value: Date) =>
@@ -39,8 +39,8 @@ export const WeightChart = ({
 
   const timeScaleTicks: string[] = useMemo(() => {
     const scale = scaleTime().domain([
-      new Date(parsedData.data[0].x),
-      new Date(parsedData.data[parsedData.data.length - 1].x),
+      new Date(parsedData.data[0]?.x),
+      new Date(parsedData.data[parsedData.data.length - 1]?.x),
     ])
     const ticks = scale.ticks(10)
     return ticks.map((tick) => format(tick))
@@ -52,7 +52,7 @@ export const WeightChart = ({
       margin={{ top: 30, right: 50, bottom: 30, left: 50 }}
       yScale={{
         type: "linear",
-        min: min - 1000,
+        min: min - 10000,
         max: max + 1000,
       }}
       axisBottom={{
@@ -86,7 +86,7 @@ export const WeightChart = ({
         size: 2,
       }}
       enableArea
-      areaBaselineValue={min}
+      areaBaselineValue={min-10000}
       defs={[
         // using helpers
         // will inherit colors from current element
