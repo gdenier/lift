@@ -1,5 +1,6 @@
 import { MobileNavbar } from "~/components/MobileNavbar"
 import { Sidebar } from "~/components/Sidebar"
+import { Toaster } from "react-hot-toast"
 
 export default async function AppLayout({
   children,
@@ -13,6 +14,7 @@ export default async function AppLayout({
         {children}
       </main>
       <MobileNavbar />
+      <Toaster />
     </div>
   )
 }

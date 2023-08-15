@@ -74,7 +74,7 @@ export default async function TrainingPage({
                   total +
                   tExercice.series.reduce(
                     (tWeight, serie) =>
-                      tWeight + (serie?.weight ?? 0) * serie.repetition,
+                      tWeight + (serie?.weight ?? 0) * (serie.repetition ?? 1),
                     0
                   ),
                 0
@@ -143,7 +143,9 @@ const ExerciceRow = ({ tExercice }: { tExercice: TrainingExercice }) => {
           <p className="row-span-2 flex aspect-square h-6 w-6 shrink-0 items-center justify-center place-self-center rounded bg-secondary text-secondary-foreground">
             {serie.order}
           </p>
-          <p className="flex-1">{serie.repetition}</p>
+          <p className="flex-1">
+            {serie.repetition ?? (serie.time ? formatTime(serie.time) : "none")}
+          </p>
           <p className="flex-1">{formatWeight(serie.weight ?? 0)}</p>
           <p className="flex-1">{formatTime(serie.rest)}</p>
         </div>

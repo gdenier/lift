@@ -1,11 +1,11 @@
 import { NotFound } from "~/components/NotFound"
 import { db } from "~/lib/db"
 import { EditTrainingForm } from "./EditTrainingForm"
-import { editTraining } from "~/lib/db/actions/trainings"
+import { editTraining, deleteTraining } from "~/lib/db/actions/trainings"
 import { editTrainingSchema } from "~/lib/db/schema"
 import { z } from "zod"
 import { auth } from "@clerk/nextjs"
-import { redirect } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
 export default async function EditTrainingPage({
   params,
@@ -32,7 +32,7 @@ export default async function EditTrainingPage({
 
   const exercices = await db.query.exercices.findMany()
 
-  if (!training) return <NotFound />
+  if (!training) return notFound()
 
   const defaultValues: z.infer<typeof editTrainingSchema> = {
     ...training,
@@ -41,7 +41,8 @@ export default async function EditTrainingPage({
       id: tExercice.id,
       order: tExercice.order,
       series: tExercice.series.map((serie) => ({
-        repetition: serie.repetition,
+        repetition: serie.repetition ?? undefined,
+        time: serie.time ?? undefined,
         id: serie.id,
         weight: serie?.weight ?? undefined,
         rest: serie.rest ?? undefined,
@@ -51,10 +52,13 @@ export default async function EditTrainingPage({
   }
 
   return (
-    <EditTrainingForm
-      defaultValues={defaultValues}
-      onSubmit={editTraining}
-      exercices={exercices}
-    />
+    <>
+      <EditTrainingForm
+        defaultValues={defaultValues}
+        onSubmit={editTraining}
+        exercices={exercices}
+        deletion={deleteTraining}
+      />
+    </>
   )
 }

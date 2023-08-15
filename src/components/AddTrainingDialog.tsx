@@ -30,6 +30,8 @@ import {
 import { SubmitButton } from "./SubmitButton"
 import { RotateCw, SaveIcon } from "lucide-react"
 import { PlusSquare } from "lucide-react"
+import { useNotify } from "~/lib/toast"
+import useSound from "use-sound"
 
 export const AddTrainingDialog = ({
   trigger,
@@ -47,9 +49,19 @@ export const AddTrainingDialog = ({
 
   const [isPending, startTransition] = useTransition()
 
+  const notify = useNotify()
+
   const handleSubmit = (values: z.infer<typeof createTrainingSchema>) => {
+    const promise = onSubmit(values)
+    notify({
+      type: "promise",
+      error: "Error",
+      success: "Success",
+      loading: "Loading",
+      promise,
+    })
     startTransition(async () => {
-      const id = await onSubmit(createFormData(values))
+      const id = await promise
       redirect(`/trainings/${id}`)
     })
   }

@@ -11,7 +11,9 @@ import {
   trainings_series,
 } from "../schema/trainings"
 import { db } from ".."
-import { eq } from "drizzle-orm"
+import { eq, inArray } from "drizzle-orm"
+import { z } from "zod"
+import { redirect } from "next/navigation"
 
 export const createTraining = withValidation(
   createTrainingSchema,
@@ -29,6 +31,26 @@ export const createTraining = withValidation(
     return newId
   }
 )
+
+export const deleteTraining = withValidation(z.string(), async (id, user) => {
+  await db.transaction(async (tx) => {
+    const exercicesQuery = tx
+      .select({ id: trainings_exercices.id })
+      .from(trainings_exercices)
+      .where(eq(trainings_exercices.trainingId, id))
+
+    await tx
+      .delete(trainings_series)
+      .where(inArray(trainings_series.trainingsExercicesId, exercicesQuery))
+    await tx
+      .delete(trainings_exercices)
+      .where(eq(trainings_exercices.trainingId, id))
+    await tx.delete(trainings).where(eq(trainings.id, id))
+  })
+  revalidatePath("/")
+  revalidatePath(`/trainings/${id}`)
+  redirect("/")
+})
 
 export const editTraining = withValidation(
   editTrainingSchema,
@@ -65,7 +87,8 @@ export const editTraining = withValidation(
           .insert(trainings_series)
           .values({
             id: serie.id ?? ulid(),
-            repetition: serie.repetition,
+            repetition: serie.repetition ?? null,
+            time: serie.time ?? null,
             rest: serie.rest,
             weight: serie.weight ?? null,
             order: serie.order,
@@ -73,7 +96,8 @@ export const editTraining = withValidation(
           })
           .onDuplicateKeyUpdate({
             set: {
-              repetition: serie.repetition,
+              repetition: serie.repetition ?? null,
+              time: serie.time ?? null,
               rest: serie.rest,
               weight: serie.weight ?? null,
               order: serie.order,

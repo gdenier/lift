@@ -67,7 +67,8 @@ export const trainings_series = table(
     id: id("id"),
     trainingsExercicesId: id("trainingsExercicesId").notNull(),
     weight: float("weight"),
-    repetition: int("repetition").notNull(),
+    repetition: int("repetition"),
+    time: int("time"),
     rest: int("rest").notNull(), // in seconds
     order: int("order").notNull(),
   },
@@ -109,36 +110,53 @@ export const editTrainingSchema = z.object({
           .pipe(z.coerce.number().positive().int().min(1)),
         series: z
           .array(
-            z.object({
-              id: z.string().ulid().optional(),
-              weight: z
-                .number()
-                .positive()
-                .or(z.string())
-                .pipe(z.coerce.number().positive())
-                .optional(),
-              repetition: z
-                .number()
-                .positive()
-                .int()
-                .min(1)
-                .or(z.string())
-                .pipe(z.coerce.number().positive().int().min(1)),
-              rest: z
-                .number()
-                .positive()
-                .int()
-                .min(1)
-                .or(z.string())
-                .pipe(z.coerce.number().positive().int().min(1)),
-              order: z
-                .number()
-                .positive()
-                .int()
-                .min(1)
-                .or(z.string())
-                .pipe(z.coerce.number().positive().int().min(1)),
-            })
+            z
+              .object({
+                id: z.string().ulid().optional(),
+                weight: z
+                  .number()
+                  .positive()
+                  .or(z.string())
+                  .pipe(z.coerce.number().positive())
+                  .optional(),
+                repetition: z
+                  .number()
+                  .positive()
+                  .int()
+                  .min(1)
+                  .or(z.string())
+                  .pipe(z.coerce.number().positive().int().min(1))
+                  .optional(),
+                time: z
+                  .number()
+                  .positive()
+                  .int()
+                  .min(1)
+                  .or(z.string())
+                  .pipe(z.coerce.number().positive().int().min(1))
+                  .optional(),
+                rest: z
+                  .number()
+                  .positive()
+                  .int()
+                  .min(1)
+                  .or(z.string())
+                  .pipe(z.coerce.number().positive().int().min(1)),
+                order: z
+                  .number()
+                  .positive()
+                  .int()
+                  .min(1)
+                  .or(z.string())
+                  .pipe(z.coerce.number().positive().int().min(1)),
+              })
+              .refine((schema) => {
+                if (schema.time && schema.repetition)
+                  return { message: "time and repetition are exclusive" }
+                if (schema.repetition && schema.time)
+                  return { message: "time and repetition are exclusive" }
+                return true
+              })
           )
           .optional(),
       })

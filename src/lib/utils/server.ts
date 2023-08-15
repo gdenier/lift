@@ -8,15 +8,13 @@ export const withValidation = <Schema extends ZodType<any, any, any>, Return>(
   schema: Schema,
   action: (body: z.infer<Schema>, user: User) => Promise<Return>
 ) => {
-  return async (formData: FormData | any): Promise<Return> => {
+  return async (data: z.infer<Schema>): Promise<Return> => {
     const { userId } = auth()
     const user = await currentUser()
     if (!userId || !user)
       throw new Error("Cannot executed for disconnected user")
-    // console.log(formData)
-    // const formPayload = Object.fromEntries(formData)
     try {
-      const parsedData = schema.parse(formData)
+      const parsedData = schema.parse(data)
       return action(parsedData, user)
     } catch (error) {
       console.error(error)

@@ -4,6 +4,7 @@ import { ReactElement, useEffect, useState } from "react"
 import { formatTime } from "~/lib/utils"
 import { Button } from "./ui/button"
 import { PlayCircle, PauseCircle, StopCircle } from "lucide-react"
+import useSound from "use-sound"
 
 export const Timer = (): ReactElement => {
   const { time, isActive, pause, resume, start, stop } = useTimer()
@@ -27,7 +28,7 @@ export const Timer = (): ReactElement => {
   )
 }
 
-const useTimer = (props?: { onFinish?: () => void }) => {
+export const useTimer = (props?: { onFinish?: () => void }) => {
   const [time, setTime] = useState(0)
   const [isActive, setIsActive] = useState(false)
   const [isPaused, setIsPaused] = useState(true)
@@ -48,9 +49,15 @@ const useTimer = (props?: { onFinish?: () => void }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, isPaused])
 
+  const [play] = useSound("/media/sound/notification-timer-end.mp3")
+
   useEffect(() => {
-    if (time <= 0) {
-      stop()
+    if (isActive && time <= 0) {
+      setTime(0)
+      setIsActive(false)
+      setIsPaused(true)
+      play()
+
       props?.onFinish?.()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,12 +77,14 @@ const useTimer = (props?: { onFinish?: () => void }) => {
     setIsPaused(true)
   }
   function resume() {
+    setTime((old) => old - 1)
     setIsPaused(false)
   }
 
   return {
     time,
     isActive,
+    isPaused,
     start,
     stop,
     pause,

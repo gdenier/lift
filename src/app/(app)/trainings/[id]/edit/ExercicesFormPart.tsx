@@ -33,12 +33,20 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
+  SheetContentProps,
   SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select"
 
 export const ExercicesFormPart = ({
   exercices,
@@ -74,7 +82,7 @@ export const ExercicesFormPart = ({
                   </p>
                 )}
               />
-              <ExercicePanel
+              <ResponsiveExercicePanel
                 index={index}
                 exercice={
                   exercices.find(
@@ -146,7 +154,7 @@ const AddExerciceDialog = ({
   )
 }
 
-const ExercicePanel = ({
+const ResponsiveExercicePanel = ({
   index,
   exercice,
   remove,
@@ -160,58 +168,101 @@ const ExercicePanel = ({
     `trainings_exercices.${number}`
   >({ name: `trainings_exercices.${index}` })
 
+  return (
+    <>
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            className="hidden w-full justify-start md:flex"
+          >
+            <p className="first-letter:uppercase">{exercice.name}</p>
+            <p>({training_exerice.series?.length ?? 0} séries)</p>
+          </Button>
+        </SheetTrigger>
+        <ExercicePanel
+          index={index}
+          exercice={exercice}
+          remove={remove}
+          side="right"
+        />
+      </Sheet>
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex w-full justify-start md:hidden"
+          >
+            <p className="first-letter:uppercase">{exercice.name}</p>
+            <p>({training_exerice.series?.length ?? 0} séries)</p>
+          </Button>
+        </SheetTrigger>
+        <ExercicePanel
+          index={index}
+          exercice={exercice}
+          remove={remove}
+          side="bottom"
+        />
+      </Sheet>
+    </>
+  )
+}
+
+const ExercicePanel = ({
+  index,
+  exercice,
+  remove,
+  side,
+}: {
+  index: number
+  exercice: Exercice
+  remove: UseFieldArrayRemove
+} & Pick<SheetContentProps, "side">) => {
   const form = useFormContext<z.infer<typeof editTrainingSchema>>()
 
   useEffect(() => {
-    console.log("update order of exercices")
     form.setValue(`trainings_exercices.${index}.order`, index + 1)
   }, [form, index])
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button type="button" variant="ghost" className="w-full justify-start">
-          <p className="first-letter:uppercase">{exercice.name}</p>
-          <p>({training_exerice.series?.length ?? 0} séries)</p>
-        </Button>
-      </SheetTrigger>
-      <SheetContent
-        className="flex flex-col justify-between max-md:max-h-[90dvh] sm:max-w-md"
-        side="bottom"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <SheetHeader>
-          <SheetTitle className="first-letter:uppercase">
-            {exercice.name}
-          </SheetTitle>
-          <SheetDescription>
-            Ajouter, modifier, supprimer vos séries
-          </SheetDescription>
-        </SheetHeader>
-        <div className="flex-1 overflow-y-auto">
-          <ExerciceFields
-            key={`training-exercice-${index}`}
-            exercice={exercice}
-            index={index}
-          />
-        </div>
-        <SheetFooter>
-          <SheetClose asChild>
-            <Button type="button" className="w-full" variant="secondary">
-              Fermer
-            </Button>
-          </SheetClose>
-          <Button
-            type="button"
-            variant="destructive"
-            size="icon"
-            onClick={() => remove(index)}
-          >
-            <Trash />
+    <SheetContent
+      className="flex flex-col justify-between max-md:max-h-[90dvh] sm:max-w-md"
+      side={side}
+      onOpenAutoFocus={(e) => e.preventDefault()}
+    >
+      <SheetHeader>
+        <SheetTitle className="first-letter:uppercase">
+          {exercice.name}
+        </SheetTitle>
+        <SheetDescription>
+          Ajouter, modifier, supprimer vos séries
+        </SheetDescription>
+      </SheetHeader>
+      <div className="flex-1 overflow-y-auto">
+        <ExerciceFields
+          key={`training-exercice-${index}`}
+          exercice={exercice}
+          index={index}
+        />
+      </div>
+      <SheetFooter>
+        <SheetClose asChild>
+          <Button type="button" className="w-full" variant="secondary">
+            Fermer
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </SheetClose>
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon"
+          onClick={() => remove(index)}
+        >
+          <Trash />
+        </Button>
+      </SheetFooter>
+    </SheetContent>
   )
 }
 
@@ -276,7 +327,6 @@ const ExerciceField = ({
   const form = useFormContext<z.infer<typeof editTrainingSchema>>()
 
   useEffect(() => {
-    console.log("update order of serie")
     form.setValue(
       `trainings_exercices.${fieldIndex}.series.${index}.order`,
       index + 1
@@ -288,28 +338,7 @@ const ExerciceField = ({
       key={`${exercice.id}-serie-${index}`}
       className="flex w-full items-end justify-between gap-1"
     >
-      <FormField
-        control={form.control}
-        name={`trainings_exercices.${fieldIndex}.series.${index}.order`}
-        render={({ field }) => (
-          <p className="flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground">
-            {field.value}
-          </p>
-        )}
-      />
-      <FormField
-        control={form.control}
-        name={`trainings_exercices.${fieldIndex}.series.${index}.repetition`}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Répétition</FormLabel>
-            <FormControl>
-              <Input type="number" placeholder="10" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <RepOrTimeField fieldIndex={fieldIndex} index={index} />
       <FormField
         control={form.control}
         name={`trainings_exercices.${fieldIndex}.series.${index}.weight`}
@@ -347,5 +376,99 @@ const ExerciceField = ({
         <Trash />
       </Button>
     </li>
+  )
+}
+
+const RepOrTimeField = ({
+  fieldIndex,
+  index,
+}: {
+  fieldIndex: number
+  index: number
+}) => {
+  const form = useFormContext<z.infer<typeof editTrainingSchema>>()
+
+  const [selected, setSelected] = useState(
+    form.getValues(
+      `trainings_exercices.${fieldIndex}.series.${index}.repetition`
+    ) !== undefined
+      ? "repetition"
+      : "time"
+  )
+  const [open, setOpen] = useState(false)
+
+  const onChange = (value: string) => {
+    if (value === "repetition") {
+      form.setValue(
+        `trainings_exercices.${fieldIndex}.series.${index}.time`,
+        undefined
+      )
+    } else {
+      form.setValue(
+        `trainings_exercices.${fieldIndex}.series.${index}.repetition`,
+        undefined
+      )
+    }
+    setSelected(value)
+  }
+
+  return (
+    <div className="flex w-[110px] min-w-[110px] max-w-[110px] flex-col">
+      <Select
+        defaultValue={selected}
+        onValueChange={onChange}
+        open={open}
+        onOpenChange={() => {
+          // hack for radix select on touch device
+          // issue: https://github.com/radix-ui/primitives/issues/1658
+          if (open)
+            setTimeout(() => {
+              setOpen((open) => !open)
+            }, 50)
+          else setOpen((open) => !open)
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="repetition">Répétition</SelectItem>
+          <SelectItem value="time">Temps</SelectItem>
+        </SelectContent>
+      </Select>
+      {selected === "repetition" ? (
+        <>
+          <FormField
+            control={form.control}
+            name={`trainings_exercices.${fieldIndex}.series.${index}.repetition`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="sr-only">Répétition</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="120" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </>
+      ) : (
+        <>
+          <FormField
+            control={form.control}
+            name={`trainings_exercices.${fieldIndex}.series.${index}.time`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="sr-only">Temps d&apos;exercice</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="120" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </>
+      )}
+    </div>
   )
 }

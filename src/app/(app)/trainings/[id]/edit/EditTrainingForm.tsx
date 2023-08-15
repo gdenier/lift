@@ -7,21 +7,23 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { SubmitButton } from "~/components/SubmitButton"
 import { Form } from "~/components/ui/form"
-import { editTraining } from "~/lib/db/actions/trainings"
+import { deleteTraining, editTraining } from "~/lib/db/actions/trainings"
 import { Exercice, editTrainingSchema } from "~/lib/db/schema"
 import { createFormData } from "~/lib/utils"
 import { MetadataFormPart } from "./MetadataFormPart"
 import { ExercicesFormPart } from "./ExercicesFormPart"
 import { Button, buttonVariants } from "~/components/ui/button"
 import Link from "next/link"
-import { StepBackIcon, Undo2 } from "lucide-react"
+import { RotateCw, StepBackIcon, Trash, Undo2 } from "lucide-react"
 
 export const EditTrainingForm = ({
   onSubmit,
   defaultValues,
   exercices,
+  deletion,
 }: {
   onSubmit: typeof editTraining
+  deletion: typeof deleteTraining
   defaultValues: z.infer<typeof editTrainingSchema>
   exercices: Exercice[]
 }): ReactElement => {
@@ -30,12 +32,19 @@ export const EditTrainingForm = ({
     defaultValues,
   })
 
-  const [isPending, startTransition] = useTransition()
+  const [isUpdatePending, startUpdateTransition] = useTransition()
+  const [isDeletePending, startDeleteTransition] = useTransition()
 
   const handleSubmit = (values: z.infer<typeof editTrainingSchema>) => {
-    startTransition(async () => {
+    startUpdateTransition(async () => {
       await onSubmit(values)
       redirect(`/trainings/${values.id}`)
+    })
+  }
+
+  const onDelete = () => {
+    startDeleteTransition(async () => {
+      await deletion(defaultValues.id)
     })
   }
 
@@ -59,7 +68,20 @@ export const EditTrainingForm = ({
             >
               <Undo2 />
             </Link>
-            <SubmitButton isPending={isPending} text={false} />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              disabled={isDeletePending}
+              onClick={onDelete}
+            >
+              {isDeletePending ? (
+                <RotateCw className="h-5 w-5 animate-spin" />
+              ) : (
+                <Trash />
+              )}
+            </Button>
+            <SubmitButton isPending={isUpdatePending} text={false} />
           </div>
         </div>
         <MetadataFormPart />
@@ -73,7 +95,7 @@ export const EditTrainingForm = ({
           >
             Annuler
           </Link>
-          <SubmitButton isPending={isPending} />
+          <SubmitButton isPending={isUpdatePending} />
         </div>
       </form>
     </Form>
