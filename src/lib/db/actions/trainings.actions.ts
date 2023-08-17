@@ -19,7 +19,7 @@ import { InferModel, eq, inArray, sql } from "drizzle-orm"
 import { z } from "zod"
 import { redirect } from "next/navigation"
 
-export async function getTraining(id: string) {
+export async function getTraining(id: string, userId: string) {
   const training = await db.query.trainings.findFirst({
     with: {
       trainings_exercices: {
@@ -32,7 +32,8 @@ export async function getTraining(id: string) {
         },
       },
     },
-    where: (trainings, { eq }) => eq(trainings.id, id),
+    where: (trainings, { eq, and }) =>
+      and(eq(trainings.id, id), eq(trainings.userId, userId)),
   })
   if (!training) throw new Error("Can't get the requested training.")
   return training
@@ -81,7 +82,7 @@ export const deleteTraining = withValidation(z.string(), async (id, user) => {
 export const editTraining = withValidation(
   editTrainingSchema,
   async (data, user) => {
-    const before = await getTraining(data.id)
+    const before = await getTraining(data.id, user.id)
     // UPDATE TRAINING
     await db
       .update(trainings)

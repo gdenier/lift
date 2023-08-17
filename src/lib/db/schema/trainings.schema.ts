@@ -149,9 +149,9 @@ export const trainings_supersets_series = table("trainings_supersets_series", {
 export const trainings_supersets_seriesRelations = relations(
   trainings_supersets_series,
   ({ one }) => ({
-    round: one(trainings_supersets, {
+    round: one(trainings_supersets_rounds, {
       fields: [trainings_supersets_series.trainingsSupersetsRoundsId],
-      references: [trainings_supersets.id],
+      references: [trainings_supersets_rounds.id],
     }),
   })
 )
@@ -169,8 +169,8 @@ export interface TrainingSuperset
 }
 
 // Schemas
-export const createTrainingSchema = zfd.formData({
-  title: zfd.text(z.string()),
+export const createTrainingSchema = z.object({
+  title: z.string(),
 })
 
 export const editTrainingSchema = z.object({
@@ -184,22 +184,14 @@ export const editTrainingSchema = z.object({
         order: integerMin0Schema,
         series: z
           .array(
-            z
-              .object({
-                id: z.string().ulid().optional(),
-                weight: integerSchema.optional(),
-                repetition: integerMin0Schema.optional(),
-                time: integerMin0Schema.optional(),
-                rest: integerMin0Schema,
-                order: integerMin0Schema,
-              })
-              .refine((schema) => {
-                if (schema.time && schema.repetition)
-                  return { message: "time and repetition are exclusive" }
-                if (schema.repetition && schema.time)
-                  return { message: "time and repetition are exclusive" }
-                return true
-              })
+            z.object({
+              id: z.string().ulid().optional(),
+              weight: integerSchema.optional(),
+              repetition: integerMin0Schema.optional(),
+              time: integerMin0Schema.optional(),
+              rest: integerMin0Schema,
+              order: integerMin0Schema,
+            })
           )
           .optional(),
       })
@@ -224,21 +216,13 @@ export const editTrainingSchema = z.object({
             rest: integerMin0Schema,
             intervalRest: integerMin0Schema,
             series: z.array(
-              z
-                .object({
-                  id: z.string().ulid().optional(),
-                  weight: integerSchema.optional(),
-                  repetition: integerMin0Schema.optional(),
-                  time: integerMin0Schema.optional(),
-                  order: integerMin0Schema,
-                })
-                .refine((schema) => {
-                  if (schema.time && schema.repetition)
-                    return { message: "time and repetition are exclusive" }
-                  if (schema.repetition && schema.time)
-                    return { message: "time and repetition are exclusive" }
-                  return true
-                })
+              z.object({
+                id: z.string().ulid().optional(),
+                weight: integerSchema.optional(),
+                repetition: integerMin0Schema.optional(),
+                time: integerMin0Schema.optional(),
+                order: integerMin0Schema,
+              })
             ),
           })
         ),

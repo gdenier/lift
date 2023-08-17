@@ -7,4 +7,4 @@ neonConfig.fetchConnectionCache = true
 
 const sql = neon(env.DRIZZLE_DATABASE_URL!)
 
-export const db = drizzle(sql, { schema, logger: true })
+export const db = drizzle(sql, { schema, logger: env.DRIZZLE_LOGGING })

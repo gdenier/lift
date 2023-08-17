@@ -1,5 +1,4 @@
 "use client"
-
 import {
   Dialog,
   DialogTrigger,
@@ -10,7 +9,7 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog"
 import { Trash } from "lucide-react"
-import { ReactElement, useEffect, useMemo, useState } from "react"
+import { ReactElement, useEffect, useState } from "react"
 import {
   FieldArrayWithId,
   UseFieldArrayAppend,
@@ -49,87 +48,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select"
-import { AddExerciceDialog, ExerciceFormPart } from "./ExerciceFormPart"
-import { AddSupersetDialog, SupersetFormPart } from "./SupersetFormPart"
+import { RepOrTimeField } from "./ExercicesFormPart"
 
-export const ExercicesFormPart = ({
+export const ExerciceFormPart = ({
+  field,
+  index,
   exercices,
+  removeExercice,
 }: {
+  field: FieldArrayWithId<
+    z.infer<typeof editTrainingSchema>,
+    "trainings_exercices"
+  >
+  removeExercice: UseFieldArrayRemove
+  index: number
   exercices: Exercice[]
 }): ReactElement => {
-  const {
-    fields: training_exercices,
-    append: appendExercice,
-    remove: removeExercice,
-  } = useFieldArray<z.infer<typeof editTrainingSchema>, "trainings_exercices">({
-    name: "trainings_exercices",
-  })
-  const {
-    fields: training_supersets,
-    append: appendSuperset,
-    remove: removeSuperset,
-  } = useFieldArray<z.infer<typeof editTrainingSchema>, "trainings_superset">({
-    name: "trainings_superset",
-  })
-
-  const training_parts = useMemo(() => {
-    const parts: {
-      index: number
-      field:
-        | FieldArrayWithId<
-            z.infer<typeof editTrainingSchema>,
-            "trainings_exercices"
-          >
-        | FieldArrayWithId<
-            z.infer<typeof editTrainingSchema>,
-            "trainings_superset"
-          >
-    }[] = []
-    training_exercices.forEach((tEx, index) => {
-      parts.splice(tEx.order, 0, { index, field: tEx })
-    })
-    training_supersets.forEach((tSuperset, index) => {
-      parts.splice(tSuperset.order, 0, { index, field: tSuperset })
-    })
-    return parts
-  }, [training_exercices, training_supersets])
+  const form = useFormContext<z.infer<typeof editTrainingSchema>>()
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle>Exercices</CardTitle>
-        <div className="flex gap-1">
-          <AddExerciceDialog exercices={exercices} onConfirm={appendExercice} />
-          <AddSupersetDialog exercices={exercices} onConfirm={appendSuperset} />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <ul className="flex w-full flex-col gap-px">
-          {training_parts.map(({ field, index }) => {
-            if ("rounds" in field) {
-              return (
-                <SupersetFormPart
-                  key={field.id}
-                  exercices={exercices}
-                  field={field}
-                  index={index}
-                  removeSuperset={removeSuperset}
-                />
-              )
-            }
-            return (
-              <ExerciceFormPart
-                key={field.id}
-                exercices={exercices}
-                field={field}
-                index={index}
-                removeExercice={removeExercice}
-              />
-            )
-          })}
-        </ul>
-      </CardContent>
-    </Card>
+    <div
+      key={field.id}
+      className="flex w-full items-center justify-stretch gap-2"
+    >
+      <FormField
+        control={form.control}
+        name={`trainings_exercices.${index}.order`}
+        render={({ field }) => (
+          <p className="flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground">
+            {field.value}
+          </p>
+        )}
+      />
+      <ResponsiveExercicePanel
+        index={index}
+        exercice={
+          exercices.find(
+            (exercice) => exercice.id === field.exerciceId
+          ) as Exercice
+        }
+        remove={removeExercice}
+      />
+    </div>
   )
 }
 
@@ -358,96 +318,57 @@ const ExerciceField = ({
   )
 }
 
-export const RepOrTimeField = ({
-  fieldIndex,
-  index,
+export const AddExerciceDialog = ({
+  onConfirm,
+  exercices,
 }: {
-  fieldIndex: number
-  index: number
+  onConfirm: UseFieldArrayAppend<
+    z.infer<typeof editTrainingSchema>,
+    "trainings_exercices"
+  >
+  exercices: Exercice[]
 }) => {
-  const form = useFormContext<z.infer<typeof editTrainingSchema>>()
-
-  const [selected, setSelected] = useState(
-    form.getValues(
-      `trainings_exercices.${fieldIndex}.series.${index}.repetition`
-    ) !== undefined
-      ? "repetition"
-      : "time"
-  )
   const [open, setOpen] = useState(false)
-
-  const onChange = (value: string) => {
-    if (value === "repetition") {
-      form.setValue(
-        `trainings_exercices.${fieldIndex}.series.${index}.time`,
-        undefined
-      )
-    } else {
-      form.setValue(
-        `trainings_exercices.${fieldIndex}.series.${index}.repetition`,
-        undefined
-      )
-    }
-    setSelected(value)
-  }
+  const trainings_exercices = useWatch<
+    z.infer<typeof editTrainingSchema>,
+    "trainings_exercices"
+  >({ name: "trainings_exercices" })
 
   return (
-    <div className="flex w-[110px] min-w-[110px] max-w-[110px] flex-col">
-      <Select
-        defaultValue={selected}
-        onValueChange={onChange}
-        open={open}
-        onOpenChange={() => {
-          // hack for radix select on touch device
-          // issue: https://github.com/radix-ui/primitives/issues/1658
-          if (open)
-            setTimeout(() => {
-              setOpen((open) => !open)
-            }, 50)
-          else setOpen((open) => !open)
-        }}
-      >
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="repetition">Répétition</SelectItem>
-          <SelectItem value="time">Temps</SelectItem>
-        </SelectContent>
-      </Select>
-      {selected === "repetition" ? (
-        <>
-          <FormField
-            control={form.control}
-            name={`trainings_exercices.${fieldIndex}.series.${index}.repetition`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="sr-only">Répétition</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="120" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      ) : (
-        <>
-          <FormField
-            control={form.control}
-            name={`trainings_exercices.${fieldIndex}.series.${index}.time`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="sr-only">Temps d&apos;exercice</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="120" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      )}
-    </div>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button type="button">Ajouter un exercice</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Ajouter un exercice</DialogTitle>
+          <DialogDescription>
+            Vous pourrez ensuite modifier les series.
+          </DialogDescription>
+        </DialogHeader>
+        <ul className="flex max-h-[70dvh] flex-col gap-px overflow-auto">
+          {exercices.map((exercice) => (
+            <li
+              key={exercice.id}
+              className="flex w-full items-center justify-between gap-2 rounded border border-transparent p-2 hover:border hover:border-border hover:bg-muted"
+            >
+              <p>{exercice.name}</p>
+              <Button
+                type="button"
+                onClick={() => {
+                  onConfirm({
+                    exerciceId: exercice.id,
+                    order: (trainings_exercices?.length ?? 0) + 1,
+                  })
+                  setOpen(false)
+                }}
+              >
+                Ajouter
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
   )
 }

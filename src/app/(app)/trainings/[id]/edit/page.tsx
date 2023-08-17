@@ -1,7 +1,11 @@
 import { NotFound } from "~/components/NotFound"
 import { db } from "~/lib/db"
 import { EditTrainingForm } from "./EditTrainingForm"
-import { editTraining, deleteTraining } from "~/lib/db/actions/trainings.actions"
+import {
+  editTraining,
+  deleteTraining,
+  getTraining,
+} from "~/lib/db/actions/trainings.actions"
 import { editTrainingSchema } from "~/lib/db/schema"
 import { z } from "zod"
 import { auth } from "@clerk/nextjs"
@@ -14,21 +18,7 @@ export default async function EditTrainingPage({
 }) {
   const { userId } = auth()
   if (!userId) redirect("/sign-in")
-  const training = await db.query.trainings.findFirst({
-    with: {
-      trainings_exercices: {
-        with: {
-          exercice: true,
-          series: true,
-        },
-        orderBy: (trainings_exercices, { asc }) => [
-          asc(trainings_exercices.order),
-        ],
-      },
-    },
-    where: (trainings, { eq, and }) =>
-      and(eq(trainings.id, params.id), eq(trainings.userId, userId)),
-  })
+  const training = await getTraining(params.id, userId)
 
   const exercices = await db.query.exercices.findMany()
 
@@ -48,6 +38,27 @@ export default async function EditTrainingPage({
         rest: serie.rest ?? undefined,
         order: serie.order,
       })),
+    })),
+    trainings_superset: training.trainings_supersets.map((tSuperset) => ({
+      exercices: tSuperset.exercices.map((sExercice) => ({
+        id: sExercice.id,
+        order: sExercice.order,
+        exerciceId: sExercice.exerciceId,
+      })),
+      rounds: tSuperset.rounds.map((round) => ({
+        order: round.order,
+        series: round.series.map((serie) => ({
+          order: serie.order,
+          id: serie.id,
+          weight: serie.weight ?? undefined,
+          repetition: serie.repetition ?? undefined,
+          time: serie.time ?? undefined,
+        })),
+        rest: round.rest,
+        intervalRest: round.intervalRest,
+        id: round.id,
+      })),
+      order: tSuperset.order,
     })),
   }
 
