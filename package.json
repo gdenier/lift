@@ -7,13 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push": "drizzle-kit push:pg --config=src/lib/db/push.config.ts",
-    "db:studio": "drizzle-kit studio --config=src/lib/db/push.config.ts"
+    "db:push": "drizzle-kit push:pg --config=drizzle.config.ts",
+    "db:migrate:create": "drizzle-kit generate:pg --config=drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config=drizzle.config.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^4.23.2",
     "@hookform/resolvers": "^3.2.0",
-    "@neondatabase/serverless": "^0.5.7",
+    "@neondatabase/serverless": "^0.6.0",
     "@nivo/core": "^0.83.0",
     "@nivo/line": "^0.83.0",
     "@nivo/stream": "^0.83.0",

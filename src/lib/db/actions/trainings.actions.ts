@@ -9,19 +9,47 @@ import {
   trainings,
   trainings_exercices,
   trainings_series,
+  trainings_supersets,
+  trainings_supersets_exercices,
+  trainings_supersets_rounds,
+  trainings_supersets_series,
 } from "../schema/trainings.schema"
 import { db } from ".."
-import { eq, inArray, sql } from "drizzle-orm"
+import { InferModel, eq, inArray, sql } from "drizzle-orm"
 import { z } from "zod"
 import { redirect } from "next/navigation"
+
+export async function getTraining(id: string) {
+  const training = await db.query.trainings.findFirst({
+    with: {
+      trainings_exercices: {
+        with: { exercice: true, series: true },
+      },
+      trainings_supersets: {
+        with: {
+          exercices: { with: { exercice: true } },
+          rounds: { with: { series: true } },
+        },
+      },
+    },
+    where: (trainings, { eq }) => eq(trainings.id, id),
+  })
+  if (!training) throw new Error("Can't get the requested training.")
+  return training
+}
 
 export const createTraining = withValidation(
   createTrainingSchema,
   async (data, user) => {
-    const inserted = (await db.insert(trainings).values({
-      title: data.title,
-      userId: user.id,
-    }).returning())[0]
+    const inserted = (
+      await db
+        .insert(trainings)
+        .values({
+          title: data.title,
+          userId: user.id,
+        })
+        .returning()
+    )[0]
 
     revalidatePath("/")
     revalidatePath(`/trainings/${inserted.id}`)
@@ -53,13 +81,7 @@ export const deleteTraining = withValidation(z.string(), async (id, user) => {
 export const editTraining = withValidation(
   editTrainingSchema,
   async (data, user) => {
-    const before = await db.query.trainings.findFirst({
-      with: {
-        trainings_exercices: {
-          with: { exercice: true, series: true },
-        },
-      },
-    })
+    const before = await getTraining(data.id)
     // UPDATE TRAINING
     await db
       .update(trainings)
@@ -68,71 +90,254 @@ export const editTraining = withValidation(
       })
       .where(eq(trainings.id, data.id))
 
-    // INSERT NEW EXERCICE
-    data.trainings_exercices?.forEach(async (tExercice) => {
-      let inserted: Partial<TrainingExercice>
-      if (!tExercice.id)
-        inserted = (await db.insert(trainings_exercices).values({
-          exerciceId: tExercice.exerciceId,
-          trainingId: data.id,
-          order: tExercice.order,
-        }).returning())[0]
-
-      // UPSERT SERIE
-      tExercice.series?.forEach(async (serie) => {
-        await db
-          .insert(trainings_series)
-          .values({
-            id: serie.id,
-            repetition: serie.repetition ?? null,
-            time: serie.time ?? null,
-            rest: serie.rest,
-            weight: serie.weight ?? null,
-            order: serie.order,
-            trainingsExercicesId: tExercice.id ?? inserted.id,
-          })
-          .onConflictDoUpdate({
-            target: trainings_series.id,
-            set:{
-              repetition: serie.repetition ?? null,
-              time: serie.time ?? null,
-              rest: serie.rest,
-              weight: serie.weight ?? null,
-              order: serie.order,
-            },
-            // where: sql`${trainings_exercices.id} = ${serie.id}`
-          })
-      })
-      // DELETE REMOVED SERIES
-      const seriesToDelete = before?.trainings_exercices
-        .find((beforeTExercice) => beforeTExercice.id === tExercice.id)
-        ?.series.filter(
-          (serie) => !tExercice.series?.map((s) => s.id).includes(serie.id)
-        )
-      seriesToDelete?.forEach(
-        async (serieToDelete) =>
-          await db
-            .delete(trainings_series)
-            .where(eq(trainings_series.id, serieToDelete.id))
-      )
-    })
-
-    //DELETE REMOVED EXERCICE WITH SERIES
-    const exercicesToDelete = before?.trainings_exercices.filter(
-      (beforeTExercice) =>
-        !data.trainings_exercices?.map((s) => s.id).includes(beforeTExercice.id)
-    )
-    exercicesToDelete?.forEach(async (exerciceToDelete) => {
-      await db
-        .delete(trainings_exercices)
-        .where(eq(trainings_exercices.id, exerciceToDelete.id))
-      await db
-        .delete(trainings_series)
-        .where(eq(trainings_series.trainingsExercicesId, exerciceToDelete.id))
-    })
+    await updateExercices(data, before)
+    await updateSupersets(data, before)
 
     revalidatePath("/")
     revalidatePath(`/trainings/${data.id}`)
     revalidatePath(`/trainings/${data.id}/edit`)
   }
 )
+
+async function updateExercices(
+  data: z.infer<typeof editTrainingSchema>,
+  training: Awaited<ReturnType<typeof getTraining>>
+) {
+  // INSERT NEW EXERCICE / UPDATE EXISTING EXERCICE
+  await Promise.all(
+    data.trainings_exercices?.map(async (tExercice) => {
+      await createOrUpdateExercice(training, tExercice)
+    }) ?? []
+  )
+
+  // DELETE REMOVED EXERCICE WITH SERIES
+  const exercicesToDelete = training?.trainings_exercices.filter(
+    (beforeTExercice) =>
+      !data.trainings_exercices?.map((s) => s.id).includes(beforeTExercice.id)
+  )
+  exercicesToDelete?.forEach(async (exerciceToDelete) => {
+    await db
+      .delete(trainings_exercices)
+      .where(eq(trainings_exercices.id, exerciceToDelete.id))
+    await db
+      .delete(trainings_series)
+      .where(eq(trainings_series.trainingsExercicesId, exerciceToDelete.id))
+  })
+}
+
+async function createOrUpdateExercice(
+  training: Awaited<ReturnType<typeof getTraining>>,
+  tExercice: NonNullable<
+    z.infer<typeof editTrainingSchema>["trainings_exercices"]
+  >[number]
+) {
+  let inserted: Partial<TrainingExercice>
+  if (!tExercice.id)
+    inserted = (
+      await db
+        .insert(trainings_exercices)
+        .values({
+          exerciceId: tExercice.exerciceId,
+          trainingId: training.id,
+          order: tExercice.order,
+        })
+        .returning()
+    )[0]
+
+  // UPSERT SERIE
+  tExercice.series?.forEach(async (serie) => {
+    await db
+      .insert(trainings_series)
+      .values({
+        id: serie.id,
+        repetition: serie.repetition ?? null,
+        time: serie.time ?? null,
+        rest: serie.rest,
+        weight: serie.weight ?? null,
+        order: serie.order,
+        trainingsExercicesId: tExercice.id ?? inserted.id,
+      })
+      .onConflictDoUpdate({
+        target: trainings_series.id,
+        set: {
+          repetition: serie.repetition ?? null,
+          time: serie.time ?? null,
+          rest: serie.rest,
+          weight: serie.weight ?? null,
+          order: serie.order,
+        },
+      })
+  })
+  // DELETE REMOVED SERIES
+  const seriesToDelete = training?.trainings_exercices
+    .find((beforeTExercice) => beforeTExercice.id === tExercice.id)
+    ?.series.filter(
+      (serie) => !tExercice.series?.map((s) => s.id).includes(serie.id)
+    )
+  seriesToDelete?.forEach(
+    async (serieToDelete) =>
+      await db
+        .delete(trainings_series)
+        .where(eq(trainings_series.id, serieToDelete.id))
+  )
+}
+
+async function updateSupersets(
+  data: z.infer<typeof editTrainingSchema>,
+  training: Awaited<ReturnType<typeof getTraining>>
+) {
+  await Promise.all(
+    data.trainings_superset?.map(async (tSuperset) => {
+      // UPSERT SUPERSET
+      const inserted = (
+        await db
+          .insert(trainings_supersets)
+          .values({
+            id: tSuperset.id,
+            trainingId: training.id,
+            order: tSuperset.order,
+          })
+          .onConflictDoUpdate({
+            target: trainings_supersets.id,
+            set: {
+              order: tSuperset.order,
+            },
+          })
+          .returning()
+      )[0]
+      // UPSERT EXERCICES
+      await Promise.all(
+        tSuperset.exercices.map(async (sExercice) => {
+          await db
+            .insert(trainings_supersets_exercices)
+            .values({
+              id: sExercice.id,
+              order: sExercice.order,
+              exerciceId: sExercice.exerciceId,
+              trainingSupersetId: inserted.id,
+            })
+            .onConflictDoUpdate({
+              target: trainings_supersets_exercices.id,
+              set: {
+                order: sExercice.order,
+              },
+            })
+        })
+      )
+      // UPSERT ROUNDS
+      await Promise.all(
+        tSuperset.rounds.map(async (round) => {
+          const insertedRound = (
+            await db
+              .insert(trainings_supersets_rounds)
+              .values({
+                id: round.id,
+                order: round.order,
+                trainingSupersetId: inserted.id,
+                intervalRest: round.intervalRest,
+                rest: round.rest,
+              })
+              .onConflictDoUpdate({
+                target: trainings_supersets_rounds.id,
+                set: {
+                  order: round.order,
+                  intervalRest: round.intervalRest,
+                  rest: round.rest,
+                },
+              })
+              .returning()
+          )[0]
+          //---- UPSERT SERIES
+          round.series.forEach(async (serie) => {
+            await db
+              .insert(trainings_supersets_series)
+              .values({
+                id: serie.id,
+                order: serie.order,
+                repetition: serie.repetition,
+                time: serie.time,
+                weight: serie.weight,
+                trainingsSupersetsRoundsId: insertedRound.id,
+              })
+              .onConflictDoUpdate({
+                target: trainings_supersets_series.id,
+                set: {
+                  order: serie.order,
+                  repetition: serie.repetition,
+                  time: serie.time,
+                  weight: serie.weight,
+                },
+              })
+          })
+        })
+      )
+
+      // DELETE REMOVED SUPERSET
+      const supersetsToDelete = training?.trainings_supersets.filter(
+        (beforeTSuperset) =>
+          !data.trainings_superset
+            ?.map((s) => s.id)
+            .includes(beforeTSuperset.id)
+      )
+      supersetsToDelete?.forEach(async (supersetToDelete) => {
+        await db
+          .delete(trainings_supersets)
+          .where(eq(trainings_exercices.id, supersetToDelete.id))
+      })
+      // DELETE REMOVED EXERCICES
+      const exercicesToDelete = training?.trainings_supersets.flatMap(
+        (superset) => {
+          return superset.exercices.filter(
+            (exercice) =>
+              !data.trainings_superset
+                ?.flatMap((tSuperset) => tSuperset.exercices.map((ex) => ex.id))
+                .includes(exercice.id)
+          )
+        }
+      )
+      exercicesToDelete.forEach(async (exerciceToDelete) => {
+        await db
+          .delete(trainings_supersets_exercices)
+          .where(eq(trainings_supersets_exercices.id, exerciceToDelete.id))
+      })
+      // DELETE REMOVED ROUNDS
+      const roundsToDelete = training?.trainings_supersets.flatMap(
+        (superset) => {
+          return superset.rounds.filter(
+            (round) =>
+              !data.trainings_superset
+                ?.flatMap((tSuperset) => tSuperset.rounds.map((r) => r.id))
+                .includes(round.id)
+          )
+        }
+      )
+      roundsToDelete.forEach(async (roundToDelete) => {
+        await db
+          .delete(trainings_supersets_rounds)
+          .where(eq(trainings_supersets_rounds.id, roundToDelete.id))
+      })
+      // DELETE REMOVED SERIES
+      const seriessToDelete = training?.trainings_supersets.flatMap(
+        (superset) => {
+          return superset.rounds.flatMap((round) => {
+            return round.series.filter(
+              (serie) =>
+                !data.trainings_superset
+                  ?.flatMap((tSuperset) =>
+                    tSuperset.rounds.flatMap((round) =>
+                      round.series.map((s) => s.id)
+                    )
+                  )
+                  .includes(serie.id)
+            )
+          })
+        }
+      )
+      seriessToDelete.forEach(async (serieToDelete) => {
+        await db
+          .delete(trainings_supersets_series)
+          .where(eq(trainings_supersets_series.id, serieToDelete.id))
+      })
+    }) ?? []
+  )
+}
