@@ -27,17 +27,11 @@ export function foreign_id(name: string) {
   return idType(name)
 }
 
-export const integerMin0Schema = z
-  .number()
-  .positive()
-  .int()
-  .min(1)
-  .or(z.string())
-  .pipe(z.coerce.number().positive().int().min(1))
-export const integerSchema = z
-  .number()
-  .positive()
-  .int()
-  .min(1)
-  .or(z.string())
-  .pipe(z.coerce.number().positive().int().min(1))
+export const integerSchema = (min = 1) =>
+  z
+    .number()
+    .positive()
+    .int()
+    .min(min)
+    .or(z.string())
+    .pipe(z.coerce.number().positive().int().min(min))

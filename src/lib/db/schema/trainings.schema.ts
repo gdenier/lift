@@ -1,17 +1,9 @@
-import {
-  foreign_id,
-  id,
-  integerMin0Schema,
-  integerSchema,
-  table,
-} from "./utils"
-import { zfd } from "zod-form-data"
+import { foreign_id, id, integerSchema, table } from "./utils"
 import { z } from "zod"
-import { InferModel, relations } from "drizzle-orm"
+import { InferSelectModel, relations } from "drizzle-orm"
 import { Exercice, exercices } from "./exercices.schema"
 import { sessions } from "./sessions.schema"
 import { integer, real, unique, varchar } from "drizzle-orm/pg-core"
-import { createInsertSchema } from "drizzle-zod"
 
 //---- TRAINING
 export const trainings = table("trainings", {
@@ -158,14 +150,14 @@ export const trainings_supersets_seriesRelations = relations(
 
 // TYPE
 export interface TrainingExercice
-  extends InferModel<typeof trainings_exercices> {
+  extends InferSelectModel<typeof trainings_exercices> {
   exercice: Exercice
-  series: InferModel<typeof trainings_series>[]
+  series: InferSelectModel<typeof trainings_series>[]
 }
 export interface TrainingSuperset
-  extends InferModel<typeof trainings_supersets> {
-  exercices: InferModel<typeof trainings_supersets_exercices>
-  rounds: (InferModel<typeof trainings_supersets_rounds> & {})[]
+  extends InferSelectModel<typeof trainings_supersets> {
+  exercices: InferSelectModel<typeof trainings_supersets_exercices>
+  rounds: (InferSelectModel<typeof trainings_supersets_rounds> & {})[]
 }
 
 // Schemas
@@ -173,6 +165,7 @@ export const createTrainingSchema = z.object({
   title: z.string(),
 })
 
+export type EditTrainingSchema = z.infer<typeof editTrainingSchema>
 export const editTrainingSchema = z.object({
   id: z.string().ulid(),
   title: z.string(),
@@ -181,16 +174,16 @@ export const editTrainingSchema = z.object({
       z.object({
         id: z.string().ulid().optional(),
         exerciceId: z.string().ulid(),
-        order: integerMin0Schema,
+        order: integerSchema(0),
         series: z
           .array(
             z.object({
               id: z.string().ulid().optional(),
-              weight: integerSchema.optional(),
-              repetition: integerMin0Schema.optional(),
-              time: integerMin0Schema.optional(),
-              rest: integerMin0Schema,
-              order: integerMin0Schema,
+              weight: integerSchema().optional(),
+              repetition: integerSchema(0).optional(),
+              time: integerSchema(0).optional(),
+              rest: integerSchema(0),
+              order: integerSchema(0),
             })
           )
           .optional(),
@@ -201,27 +194,27 @@ export const editTrainingSchema = z.object({
     .array(
       z.object({
         id: z.string().ulid().optional(),
-        order: integerMin0Schema,
+        order: integerSchema(0),
         exercices: z.array(
           z.object({
             id: z.string().ulid().optional(),
             exerciceId: z.string().ulid(),
-            order: integerMin0Schema,
+            order: integerSchema(0),
           })
         ),
         rounds: z.array(
           z.object({
             id: z.string().ulid().optional(),
-            order: integerMin0Schema,
-            rest: integerMin0Schema,
-            intervalRest: integerMin0Schema,
+            order: integerSchema(0),
+            rest: integerSchema(0),
+            intervalRest: integerSchema(0),
             series: z.array(
               z.object({
                 id: z.string().ulid().optional(),
-                weight: integerSchema.optional(),
-                repetition: integerMin0Schema.optional(),
-                time: integerMin0Schema.optional(),
-                order: integerMin0Schema,
+                weight: integerSchema().optional(),
+                repetition: integerSchema(0).optional(),
+                time: integerSchema(0).optional(),
+                order: integerSchema(0),
               })
             ),
           })

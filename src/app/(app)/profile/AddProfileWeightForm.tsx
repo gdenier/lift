@@ -35,7 +35,7 @@ export const AddProfileWeightForm = ({
   onSubmit: typeof createWeight
 }): ReactElement => {
   const form = useForm<z.infer<typeof createProfileWeightSchema>>({
-    resolver: zodResolver(createProfileWeightSchema),
+    resolver: zodResolver(createProfileWeightSchema as any), // FIXME: remove cast when solution for Zod Readonly
     defaultValues: {
       value: undefined,
     },

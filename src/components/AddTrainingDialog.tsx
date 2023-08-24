@@ -41,7 +41,7 @@ export const AddTrainingDialog = ({
   onSubmit: typeof createTraining
 }): ReactElement => {
   const form = useForm<z.infer<typeof createTrainingSchema>>({
-    resolver: zodResolver(createTrainingSchema),
+    resolver: zodResolver(createTrainingSchema as any), // FIXME: remove cast when solution for Zod Readonly
     defaultValues: {
       title: "",
     },

@@ -12,10 +12,10 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { editTrainingSchema } from "~/lib/db/schema"
+import { EditTrainingSchema, editTrainingSchema } from "~/lib/db/schema"
 
 export const MetadataFormPart = (): ReactElement => {
-  const form = useFormContext<z.infer<typeof editTrainingSchema>>()
+  const form = useFormContext<EditTrainingSchema>()
 
   return (
     <Card>

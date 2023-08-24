@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { withValidation } from "~/lib/utils/server"
 import {
+  EditTrainingSchema,
   TrainingExercice,
   createTrainingSchema,
   editTrainingSchema,
@@ -101,7 +102,7 @@ export const editTraining = withValidation(
 )
 
 async function updateExercices(
-  data: z.infer<typeof editTrainingSchema>,
+  data: EditTrainingSchema,
   training: Awaited<ReturnType<typeof getTraining>>
 ) {
   // INSERT NEW EXERCICE / UPDATE EXISTING EXERCICE
@@ -128,9 +129,7 @@ async function updateExercices(
 
 async function createOrUpdateExercice(
   training: Awaited<ReturnType<typeof getTraining>>,
-  tExercice: NonNullable<
-    z.infer<typeof editTrainingSchema>["trainings_exercices"]
-  >[number]
+  tExercice: NonNullable<EditTrainingSchema["trainings_exercices"]>[number]
 ) {
   let inserted: Partial<TrainingExercice>
   if (!tExercice.id)
@@ -184,7 +183,7 @@ async function createOrUpdateExercice(
 }
 
 async function updateSupersets(
-  data: z.infer<typeof editTrainingSchema>,
+  data: EditTrainingSchema,
   training: Awaited<ReturnType<typeof getTraining>>
 ) {
   await Promise.all(

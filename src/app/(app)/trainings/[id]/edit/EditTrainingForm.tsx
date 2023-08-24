@@ -7,8 +7,15 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { SubmitButton } from "~/components/SubmitButton"
 import { Form } from "~/components/ui/form"
-import { deleteTraining, editTraining } from "~/lib/db/actions/trainings.actions"
-import { Exercice, editTrainingSchema } from "~/lib/db/schema"
+import {
+  deleteTraining,
+  editTraining,
+} from "~/lib/db/actions/trainings.actions"
+import {
+  EditTrainingSchema,
+  Exercice,
+  editTrainingSchema,
+} from "~/lib/db/schema"
 import { createFormData } from "~/lib/utils"
 import { MetadataFormPart } from "./MetadataFormPart"
 import { ExercicesFormPart } from "./ExercicesFormPart"
@@ -24,18 +31,18 @@ export const EditTrainingForm = ({
 }: {
   onSubmit: typeof editTraining
   deletion: typeof deleteTraining
-  defaultValues: z.infer<typeof editTrainingSchema>
+  defaultValues: EditTrainingSchema
   exercices: Exercice[]
 }): ReactElement => {
-  const form = useForm<z.infer<typeof editTrainingSchema>>({
-    resolver: zodResolver(editTrainingSchema),
+  const form = useForm<EditTrainingSchema>({
+    resolver: zodResolver(editTrainingSchema as any), // FIXME: remove cast when solution for Zod Readonly
     defaultValues,
   })
 
   const [isUpdatePending, startUpdateTransition] = useTransition()
   const [isDeletePending, startDeleteTransition] = useTransition()
 
-  const handleSubmit = (values: z.infer<typeof editTrainingSchema>) => {
+  const handleSubmit = (values: EditTrainingSchema) => {
     startUpdateTransition(async () => {
       await onSubmit(values)
       redirect(`/trainings/${values.id}`)

@@ -29,7 +29,11 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { Exercice, editTrainingSchema } from "~/lib/db/schema"
+import {
+  EditTrainingSchema,
+  Exercice,
+  editTrainingSchema,
+} from "~/lib/db/schema"
 import {
   Sheet,
   SheetClose,
@@ -56,15 +60,12 @@ export const ExerciceFormPart = ({
   exercices,
   removeExercice,
 }: {
-  field: FieldArrayWithId<
-    z.infer<typeof editTrainingSchema>,
-    "trainings_exercices"
-  >
+  field: FieldArrayWithId<EditTrainingSchema, "trainings_exercices">
   removeExercice: UseFieldArrayRemove
   index: number
   exercices: Exercice[]
 }): ReactElement => {
-  const form = useFormContext<z.infer<typeof editTrainingSchema>>()
+  const form = useFormContext<EditTrainingSchema>()
 
   return (
     <div
@@ -103,7 +104,7 @@ const ResponsiveExercicePanel = ({
   remove: UseFieldArrayRemove
 }) => {
   const training_exerice = useWatch<
-    z.infer<typeof editTrainingSchema>,
+    EditTrainingSchema,
     `trainings_exercices.${number}`
   >({ name: `trainings_exercices.${index}` })
 
@@ -159,7 +160,7 @@ const ExercicePanel = ({
   exercice: Exercice
   remove: UseFieldArrayRemove
 } & Pick<SheetContentProps, "side">) => {
-  const form = useFormContext<z.infer<typeof editTrainingSchema>>()
+  const form = useFormContext<EditTrainingSchema>()
 
   useEffect(() => {
     form.setValue(`trainings_exercices.${index}.order`, index + 1)
@@ -213,11 +214,11 @@ const ExerciceFields = ({
   exercice: Exercice
 }) => {
   const { fields, append, remove } = useFieldArray<
-    z.infer<typeof editTrainingSchema>,
+    EditTrainingSchema,
     `trainings_exercices.${number}.series`
   >({ name: `trainings_exercices.${fieldIndex}.series` })
 
-  const form = useFormContext<z.infer<typeof editTrainingSchema>>()
+  const form = useFormContext<EditTrainingSchema>()
 
   return (
     <>
@@ -263,7 +264,7 @@ const ExerciceField = ({
   exercice: Exercice
   remove: UseFieldArrayRemove
 }) => {
-  const form = useFormContext<z.infer<typeof editTrainingSchema>>()
+  const form = useFormContext<EditTrainingSchema>()
 
   useEffect(() => {
     form.setValue(
@@ -322,15 +323,12 @@ export const AddExerciceDialog = ({
   onConfirm,
   exercices,
 }: {
-  onConfirm: UseFieldArrayAppend<
-    z.infer<typeof editTrainingSchema>,
-    "trainings_exercices"
-  >
+  onConfirm: UseFieldArrayAppend<EditTrainingSchema, "trainings_exercices">
   exercices: Exercice[]
 }) => {
   const [open, setOpen] = useState(false)
   const trainings_exercices = useWatch<
-    z.infer<typeof editTrainingSchema>,
+    EditTrainingSchema,
     "trainings_exercices"
   >({ name: "trainings_exercices" })
 

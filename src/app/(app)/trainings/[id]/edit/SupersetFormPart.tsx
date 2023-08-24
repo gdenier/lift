@@ -30,7 +30,11 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { Exercice, editTrainingSchema } from "~/lib/db/schema"
+import {
+  EditTrainingSchema,
+  Exercice,
+  editTrainingSchema,
+} from "~/lib/db/schema"
 import {
   Sheet,
   SheetClose,
@@ -56,15 +60,12 @@ export const SupersetFormPart = ({
   exercices,
   removeSuperset,
 }: {
-  field: FieldArrayWithId<
-    z.infer<typeof editTrainingSchema>,
-    "trainings_superset"
-  >
+  field: FieldArrayWithId<EditTrainingSchema, "trainings_superset">
   removeSuperset: UseFieldArrayRemove
   index: number
   exercices: Exercice[]
 }): ReactElement => {
-  const form = useFormContext<z.infer<typeof editTrainingSchema>>()
+  const form = useFormContext<EditTrainingSchema>()
   return (
     <div
       key={field.id}
@@ -101,19 +102,15 @@ export const AddSupersetDialog = ({
   onConfirm,
   exercices,
 }: {
-  onConfirm: UseFieldArrayAppend<
-    z.infer<typeof editTrainingSchema>,
-    "trainings_superset"
-  >
+  onConfirm: UseFieldArrayAppend<EditTrainingSchema, "trainings_superset">
   exercices: Exercice[]
 }) => {
   const [open, setOpen] = useState(false)
-  const trainings_superset = useWatch<
-    z.infer<typeof editTrainingSchema>,
-    "trainings_superset"
-  >({ name: "trainings_superset" })
+  const trainings_superset = useWatch<EditTrainingSchema, "trainings_superset">(
+    { name: "trainings_superset" }
+  )
   const trainings_exercices = useWatch<
-    z.infer<typeof editTrainingSchema>,
+    EditTrainingSchema,
     "trainings_exercices"
   >({ name: "trainings_exercices" })
 

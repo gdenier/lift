@@ -1,4 +1,3 @@
-import { NotFound } from "~/components/NotFound"
 import { db } from "~/lib/db"
 import { EditTrainingForm } from "./EditTrainingForm"
 import {
@@ -6,7 +5,7 @@ import {
   deleteTraining,
   getTraining,
 } from "~/lib/db/actions/trainings.actions"
-import { editTrainingSchema } from "~/lib/db/schema"
+import { EditTrainingSchema } from "~/lib/db/schema"
 import { z } from "zod"
 import { auth } from "@clerk/nextjs"
 import { notFound, redirect } from "next/navigation"
@@ -24,7 +23,7 @@ export default async function EditTrainingPage({
 
   if (!training) return notFound()
 
-  const defaultValues: z.infer<typeof editTrainingSchema> = {
+  const defaultValues: EditTrainingSchema = {
     ...training,
     trainings_exercices: training.trainings_exercices.map((tExercice) => ({
       exerciceId: tExercice.exercice.id,
