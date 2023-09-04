@@ -39,6 +39,7 @@ export default async function EditTrainingPage({
       })),
     })),
     trainings_superset: training.trainings_supersets.map((tSuperset) => ({
+      id: tSuperset.id,
       exercices: tSuperset.exercices.map((sExercice) => ({
         id: sExercice.id,
         order: sExercice.order,

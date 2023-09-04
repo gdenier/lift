@@ -149,6 +149,9 @@ export const trainings_supersets_seriesRelations = relations(
 )
 
 // TYPE
+export type Serie =
+  | InferSelectModel<typeof trainings_series>
+  | InferSelectModel<typeof trainings_supersets_series>
 export interface TrainingExercice
   extends InferSelectModel<typeof trainings_exercices> {
   exercice: Exercice
@@ -156,8 +159,12 @@ export interface TrainingExercice
 }
 export interface TrainingSuperset
   extends InferSelectModel<typeof trainings_supersets> {
-  exercices: InferSelectModel<typeof trainings_supersets_exercices>
-  rounds: (InferSelectModel<typeof trainings_supersets_rounds> & {})[]
+  exercices: (InferSelectModel<typeof trainings_supersets_exercices> & {
+    exercice: InferSelectModel<typeof exercices>
+  })[]
+  rounds: (InferSelectModel<typeof trainings_supersets_rounds> & {
+    series: InferSelectModel<typeof trainings_supersets_series>[]
+  })[]
 }
 
 // Schemas

@@ -6,7 +6,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogHeader,
-  DialogFooter,
 } from "~/components/ui/dialog"
 import { Trash } from "lucide-react"
 import { ReactElement, useEffect, useState } from "react"
@@ -18,9 +17,7 @@ import {
   useFormContext,
   useWatch,
 } from "react-hook-form"
-import { z } from "zod"
 import { Button } from "~/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import {
   FormField,
   FormItem,
@@ -32,7 +29,6 @@ import { Input } from "~/components/ui/input"
 import {
   EditTrainingSchema,
   Exercice,
-  editTrainingSchema,
 } from "~/lib/db/schema"
 import {
   Sheet,
@@ -45,13 +41,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select"
 import { RepOrTimeField } from "./ExercicesFormPart"
 
 export const ExerciceFormPart = ({

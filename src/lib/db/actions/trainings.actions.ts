@@ -32,6 +32,7 @@ export async function getTraining(id: string, userId: string) {
           rounds: { with: { series: true } },
         },
       },
+      sessions: true
     },
     where: (trainings, { eq, and }) =>
       and(eq(trainings.id, id), eq(trainings.userId, userId)),
@@ -186,6 +187,7 @@ async function updateSupersets(
   data: EditTrainingSchema,
   training: Awaited<ReturnType<typeof getTraining>>
 ) {
+  console.log(data)
   await Promise.all(
     data.trainings_superset?.map(async (tSuperset) => {
       // UPSERT SUPERSET
