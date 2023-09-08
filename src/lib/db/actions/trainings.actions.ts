@@ -85,7 +85,6 @@ export const deleteTraining = withValidation(z.string(), async (id, user) => {
 export const editTraining = withValidation(
   editTrainingSchema,
   async (data, user) => {
-    console.log(data)
     const before = await getTraining(data.id, user.id)
     // UPDATE TRAINING
     await db
@@ -264,8 +263,8 @@ async function updateSupersets(
                 target: trainings_supersets_series.id,
                 set: {
                   order: serie.order,
-                  repetition: serie.repetition,
-                  time: serie.time,
+                  repetition: serie.repetition ?? null,
+                  time: serie.time ?? null,
                   weight: serie.weight,
                 },
               })
@@ -329,7 +328,6 @@ async function updateSupersets(
       )
     })
   })
-  console.log(seriessToDelete.map((s) => s.id))
   seriessToDelete.forEach(async (serieToDelete) => {
     await db
       .delete(trainings_supersets_series)

@@ -80,16 +80,18 @@ export const SupersetFormPart = ({
           replaceRound={roundFieldArray.replace}
         />
         <ul>
-          {field.exercices.map((exercice) => (
-            <li key={exercice.id}>
-              <SupersetExerciceDialog
-                exercice={
-                  exercices.find((ex) => ex.id === exercice.exerciceId)!
-                }
-                supersetIndex={index}
-              />
-            </li>
-          ))}
+          {field.exercices
+            .sort((a, b) => a.order - b.order)
+            .map((exercice) => (
+              <li key={exercice.id}>
+                <SupersetExerciceDialog
+                  exercice={
+                    exercices.find((ex) => ex.id === exercice.exerciceId)!
+                  }
+                  supersetIndex={index}
+                />
+              </li>
+            ))}
         </ul>
       </div>
     </div>

@@ -115,12 +115,6 @@ const ExercicePanel = ({
   exercice: Exercice
   remove: UseFieldArrayRemove
 }) => {
-  const form = useFormContext<EditTrainingSchema>()
-
-  useEffect(() => {
-    form.setValue(`trainings_exercices.${index}.order`, index + 1)
-  }, [form, index])
-
   return (
     <>
       <SheetHeader>
