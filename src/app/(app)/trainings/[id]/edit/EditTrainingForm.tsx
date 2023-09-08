@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { redirect } from "next/navigation"
 import { ReactElement, useTransition } from "react"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
 import { SubmitButton } from "~/components/SubmitButton"
 import { Form } from "~/components/ui/form"
 import {
@@ -16,12 +15,11 @@ import {
   Exercice,
   editTrainingSchema,
 } from "~/lib/db/schema"
-import { createFormData } from "~/lib/utils"
 import { MetadataFormPart } from "./MetadataFormPart"
 import { ExercicesFormPart } from "./ExercicesFormPart"
 import { Button, buttonVariants } from "~/components/ui/button"
 import Link from "next/link"
-import { RotateCw, StepBackIcon, Trash, Undo2 } from "lucide-react"
+import { RotateCw, Trash, Undo2 } from "lucide-react"
 
 export const EditTrainingForm = ({
   onSubmit,

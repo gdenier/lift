@@ -26,22 +26,16 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
+import { EditTrainingSchema, Exercice } from "~/lib/db/schema"
 import {
-  EditTrainingSchema,
-  Exercice,
-} from "~/lib/db/schema"
-import {
-  Sheet,
   SheetClose,
-  SheetContent,
-  SheetContentProps,
   SheetDescription,
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "~/components/ui/sheet"
 import { RepOrTimeField } from "./ExercicesFormPart"
+import { ResponsiveDialog } from "~/components/ResponsiveDialog"
 
 export const ExerciceFormPart = ({
   field,
@@ -98,44 +92,17 @@ const ResponsiveExercicePanel = ({
   >({ name: `trainings_exercices.${index}` })
 
   return (
-    <>
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            className="hidden w-full justify-start md:flex"
-          >
-            <p className="first-letter:uppercase">{exercice.name}</p>
-            <p>({training_exerice.series?.length ?? 0} séries)</p>
-          </Button>
-        </SheetTrigger>
-        <ExercicePanel
-          index={index}
-          exercice={exercice}
-          remove={remove}
-          side="right"
-        />
-      </Sheet>
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            className="flex w-full justify-start md:hidden"
-          >
-            <p className="first-letter:uppercase">{exercice.name}</p>
-            <p>({training_exerice.series?.length ?? 0} séries)</p>
-          </Button>
-        </SheetTrigger>
-        <ExercicePanel
-          index={index}
-          exercice={exercice}
-          remove={remove}
-          side="bottom"
-        />
-      </Sheet>
-    </>
+    <ResponsiveDialog
+      label={
+        <>
+          <p className="first-letter:uppercase">{exercice.name}</p>
+          <p>({training_exerice.series?.length ?? 0} séries)</p>
+        </>
+      }
+      panel={
+        <ExercicePanel index={index} exercice={exercice} remove={remove} />
+      }
+    />
   )
 }
 
@@ -143,12 +110,11 @@ const ExercicePanel = ({
   index,
   exercice,
   remove,
-  side,
 }: {
   index: number
   exercice: Exercice
   remove: UseFieldArrayRemove
-} & Pick<SheetContentProps, "side">) => {
+}) => {
   const form = useFormContext<EditTrainingSchema>()
 
   useEffect(() => {
@@ -156,11 +122,7 @@ const ExercicePanel = ({
   }, [form, index])
 
   return (
-    <SheetContent
-      className="flex flex-col justify-between max-md:max-h-[90dvh] sm:max-w-md"
-      side={side}
-      onOpenAutoFocus={(e) => e.preventDefault()}
-    >
+    <>
       <SheetHeader>
         <SheetTitle className="first-letter:uppercase">
           {exercice.name}
@@ -191,7 +153,7 @@ const ExercicePanel = ({
           <Trash />
         </Button>
       </SheetFooter>
-    </SheetContent>
+    </>
   )
 }
 
@@ -267,7 +229,9 @@ const ExerciceField = ({
       key={`${exercice.id}-serie-${index}`}
       className="flex w-full items-end justify-between gap-1"
     >
-      <RepOrTimeField fieldIndex={fieldIndex} index={index} />
+      <RepOrTimeField
+        name={`trainings_exercices.${fieldIndex}.series.${index}`}
+      />
       <FormField
         control={form.control}
         name={`trainings_exercices.${fieldIndex}.series.${index}.weight`}
@@ -320,6 +284,10 @@ export const AddExerciceDialog = ({
     EditTrainingSchema,
     "trainings_exercices"
   >({ name: "trainings_exercices" })
+  const trainings_supersets = useWatch<
+    EditTrainingSchema,
+    "trainings_supersets"
+  >({ name: "trainings_supersets" })
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -345,7 +313,10 @@ export const AddExerciceDialog = ({
                 onClick={() => {
                   onConfirm({
                     exerciceId: exercice.id,
-                    order: (trainings_exercices?.length ?? 0) + 1,
+                    order:
+                      (trainings_exercices?.length ?? 0) +
+                      (trainings_supersets?.length ?? 0) +
+                      1,
                   })
                   setOpen(false)
                 }}

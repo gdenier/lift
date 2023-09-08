@@ -67,6 +67,8 @@ export const trainings_supersets = table("trainings_supersets", {
   id: id(),
   trainingId: foreign_id("training_id").notNull(),
   order: integer("order").notNull(),
+  rest: integer("rest").notNull(), // in seconds
+  intervalRest: integer("interval_rest").notNull(),
 })
 
 export const trainings_supersetsRelations = relations(
@@ -111,8 +113,6 @@ export const trainings_supersets_rounds = table("trainings_supersets_rounds", {
   id: id(),
   trainingSupersetId: foreign_id("trainings_supersets_id").notNull(),
   order: integer("order").notNull(),
-  rest: integer("rest").notNull(), // in seconds
-  intervalRest: integer("interval_rest").notNull(),
 })
 
 export const trainings_supersets_roundsRelations = relations(
@@ -197,11 +197,13 @@ export const editTrainingSchema = z.object({
       })
     )
     .optional(),
-  trainings_superset: z
+  trainings_supersets: z
     .array(
       z.object({
         id: z.string().ulid().optional(),
         order: integerSchema(0),
+        rest: integerSchema(0), // in seconds
+        intervalRest: integerSchema(0),
         exercices: z.array(
           z.object({
             id: z.string().ulid().optional(),
@@ -213,8 +215,6 @@ export const editTrainingSchema = z.object({
           z.object({
             id: z.string().ulid().optional(),
             order: integerSchema(0),
-            rest: integerSchema(0),
-            intervalRest: integerSchema(0),
             series: z.array(
               z.object({
                 id: z.string().ulid().optional(),

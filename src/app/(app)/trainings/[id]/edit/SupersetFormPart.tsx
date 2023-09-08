@@ -9,50 +9,36 @@ import {
   DialogHeader,
   DialogFooter,
 } from "~/components/ui/dialog"
-import { Trash } from "lucide-react"
-import { ReactElement, useEffect, useState } from "react"
+import { ReactElement, useState } from "react"
 import {
   FieldArrayWithId,
   UseFieldArrayAppend,
   UseFieldArrayRemove,
+  UseFieldArrayReplace,
   useFieldArray,
   useFormContext,
   useWatch,
 } from "react-hook-form"
-import { z } from "zod"
 import { Button } from "~/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import {
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from "~/components/ui/form"
-import { Input } from "~/components/ui/input"
+import { EditTrainingSchema, Exercice, TrainingSuperset } from "~/lib/db/schema"
+import { ResponsiveDialog } from "~/components/ResponsiveDialog"
 import {
-  EditTrainingSchema,
-  Exercice,
-  editTrainingSchema,
-} from "~/lib/db/schema"
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetContentProps,
-  SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
+  SheetDescription,
+  SheetFooter,
+  SheetClose,
 } from "~/components/ui/sheet"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select"
+import { Trash } from "lucide-react"
+import { Input } from "~/components/ui/input"
+import { RepOrTimeField } from "./ExercicesFormPart"
 
 export const SupersetFormPart = ({
   field,
@@ -60,12 +46,18 @@ export const SupersetFormPart = ({
   exercices,
   removeSuperset,
 }: {
-  field: FieldArrayWithId<EditTrainingSchema, "trainings_superset">
+  field: FieldArrayWithId<EditTrainingSchema, "trainings_supersets">
   removeSuperset: UseFieldArrayRemove
   index: number
   exercices: Exercice[]
 }): ReactElement => {
   const form = useFormContext<EditTrainingSchema>()
+
+  const roundFieldArray = useFieldArray<
+    EditTrainingSchema,
+    `trainings_supersets.${number}.rounds`
+  >({ name: `trainings_supersets.${index}.rounds` })
+
   return (
     <div
       key={field.id}
@@ -73,23 +65,29 @@ export const SupersetFormPart = ({
     >
       <FormField
         control={form.control}
-        name={`trainings_superset.${index}.order`}
+        name={`trainings_supersets.${index}.order`}
         render={({ field }) => (
           <p className="flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground">
             {field.value}
           </p>
         )}
       />
-      <div>
-        <p className="first-letter:uppercase">
-          Super set {index + 1} ({field.rounds.length} rounds)
-        </p>
+      <div className="w-full">
+        <SupersetSettingsDialog
+          index={index}
+          removeSuperset={removeSuperset}
+          superset={field}
+          replaceRound={roundFieldArray.replace}
+        />
         <ul>
           {field.exercices.map((exercice) => (
             <li key={exercice.id}>
-              <p>
-                {exercices.find((ex) => ex.id === exercice.exerciceId)?.name}
-              </p>
+              <SupersetExerciceDialog
+                exercice={
+                  exercices.find((ex) => ex.id === exercice.exerciceId)!
+                }
+                supersetIndex={index}
+              />
             </li>
           ))}
         </ul>
@@ -102,13 +100,14 @@ export const AddSupersetDialog = ({
   onConfirm,
   exercices,
 }: {
-  onConfirm: UseFieldArrayAppend<EditTrainingSchema, "trainings_superset">
+  onConfirm: UseFieldArrayAppend<EditTrainingSchema, "trainings_supersets">
   exercices: Exercice[]
 }) => {
   const [open, setOpen] = useState(false)
-  const trainings_superset = useWatch<EditTrainingSchema, "trainings_superset">(
-    { name: "trainings_superset" }
-  )
+  const trainings_supersets = useWatch<
+    EditTrainingSchema,
+    "trainings_supersets"
+  >({ name: "trainings_supersets" })
   const trainings_exercices = useWatch<
     EditTrainingSchema,
     "trainings_exercices"
@@ -184,10 +183,13 @@ export const AddSupersetDialog = ({
                 })),
                 order:
                   (trainings_exercices?.length ?? 0) +
-                  (trainings_superset?.length ?? 0) +
+                  (trainings_supersets?.length ?? 0) +
                   1,
+                intervalRest: 0,
+                rest: 60, // use default rest time of account
                 rounds: [],
               })
+              setSelectedExercices([])
               setOpen(false)
             }}
           >
@@ -196,5 +198,230 @@ export const AddSupersetDialog = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+const SupersetSettingsDialog = ({
+  index,
+  superset,
+  removeSuperset,
+  replaceRound,
+}: {
+  index: number
+  superset: FieldArrayWithId<EditTrainingSchema, "trainings_supersets">
+  removeSuperset: UseFieldArrayRemove
+  replaceRound: UseFieldArrayReplace<
+    EditTrainingSchema,
+    `trainings_supersets.${number}.rounds`
+  >
+}) => {
+  const form = useFormContext<EditTrainingSchema>()
+  const rounds = useWatch<
+    EditTrainingSchema,
+    `trainings_supersets.${number}.rounds`
+  >({ name: `trainings_supersets.${index}.rounds` })
+  const supersetExercices = useWatch<
+    EditTrainingSchema,
+    `trainings_supersets.${number}.exercices`
+  >({ name: `trainings_supersets.${index}.exercices` })
+
+  return (
+    <ResponsiveDialog
+      label={
+        <>
+          <p className="first-letter:uppercase">Super set {index + 1}</p>
+          <p>({rounds.length} rounds)</p>
+        </>
+      }
+      panel={
+        <>
+          <SheetHeader>
+            <SheetTitle className="first-letter:uppercase">
+              Super set {index + 1}
+            </SheetTitle>
+            <SheetDescription>
+              Modifier les paramètres du superset.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            <FormItem>
+              <FormLabel>Nombre de rounds</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="3"
+                  defaultValue={rounds.length}
+                  onChange={(event) => {
+                    const nbRound = +event.target.value
+                    console.log(nbRound)
+                    if (nbRound > rounds.length) {
+                      let order = rounds.length
+                      return replaceRound([
+                        ...rounds,
+                        ...Array(nbRound - rounds.length).fill({
+                          order: ++order,
+                          series: supersetExercices.map((ex) => ({
+                            order: ex.order,
+                          })),
+                        }),
+                      ])
+                    }
+                    replaceRound(rounds.slice(0, nbRound))
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+            <FormField
+              control={form.control}
+              name={`trainings_supersets.${index}.rest`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Repos entre les rounds (seconde)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="120" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name={`trainings_supersets.${index}.intervalRest`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Repos entre exercices (seconde)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="120" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button type="button" className="w-full" variant="secondary">
+                Fermer
+              </Button>
+            </SheetClose>
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              onClick={() => removeSuperset(index)}
+            >
+              <Trash />
+            </Button>
+          </SheetFooter>
+        </>
+      }
+    />
+  )
+}
+
+const SupersetExerciceDialog = ({
+  exercice,
+  supersetIndex,
+}: {
+  exercice: Exercice
+  supersetIndex: number
+}) => {
+  const rounds = useWatch<
+    EditTrainingSchema,
+    `trainings_supersets.${number}.rounds`
+  >({ name: `trainings_supersets.${supersetIndex}.rounds` })
+
+  const supersetExercices = useWatch<
+    EditTrainingSchema,
+    `trainings_supersets.${number}.exercices`
+  >({ name: `trainings_supersets.${supersetIndex}.exercices` })
+
+  return (
+    <ResponsiveDialog
+      label={
+        <>
+          <p className="first-letter:uppercase">{exercice.name}</p>
+        </>
+      }
+      panel={
+        <>
+          <SheetHeader>
+            <SheetTitle className="first-letter:uppercase">
+              {exercice.name}
+            </SheetTitle>
+            <SheetDescription>
+              Modifier les séries de cet exercice.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            <div className="flex w-full flex-col gap-1">
+              {rounds.map((round, roundIndex) => (
+                <SupersetSerieField
+                  key={`superset-${supersetIndex}-${exercice.id}-serie-${roundIndex}`}
+                  roundIndex={roundIndex}
+                  supersetIndex={supersetIndex}
+                  serieIndex={round.series.findIndex(
+                    (s) =>
+                      s.order ===
+                      supersetExercices.find(
+                        (ex) => ex.exerciceId === exercice.id
+                      )!.order
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button type="button" className="w-full" variant="secondary">
+                Fermer
+              </Button>
+            </SheetClose>
+          </SheetFooter>
+        </>
+      }
+    />
+  )
+}
+
+const SupersetSerieField = ({
+  supersetIndex,
+  roundIndex,
+  serieIndex,
+}: {
+  supersetIndex: number
+  roundIndex: number
+  serieIndex: number
+}) => {
+  const form = useFormContext<EditTrainingSchema>()
+
+  const serie = useWatch<
+    EditTrainingSchema,
+    `trainings_supersets.${number}.rounds.${number}.series.${number}`
+  >({
+    name: `trainings_supersets.${supersetIndex}.rounds.${roundIndex}.series.${serieIndex}`,
+  })
+
+  return (
+    <li className="flex w-full items-end justify-between gap-1">
+      <RepOrTimeField
+        name={`trainings_supersets.${supersetIndex}.rounds.${roundIndex}.series.${serieIndex}`}
+      />
+      <FormField
+        control={form.control}
+        name={`trainings_supersets.${supersetIndex}.rounds.${roundIndex}.series.${serieIndex}.weight`}
+        render={({ field }) => (
+          // TODO: Custom Weight input
+          <FormItem>
+            <FormLabel>Poids (gramme)</FormLabel>
+            <FormControl>
+              <Input type="number" placeholder="5000" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </li>
   )
 }

@@ -3,6 +3,7 @@
 import { ReactElement, useMemo, useState } from "react"
 import {
   FieldArrayWithId,
+  FieldName,
   useFieldArray,
   useFormContext,
 } from "react-hook-form"
@@ -15,10 +16,7 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import {
-  EditTrainingSchema,
-  Exercice,
-} from "~/lib/db/schema"
+import { EditTrainingSchema, Exercice } from "~/lib/db/schema"
 import {
   Select,
   SelectContent,
@@ -38,6 +36,7 @@ export const ExercicesFormPart = ({
     fields: training_exercices,
     append: appendExercice,
     remove: removeExercice,
+    update: updateExercice,
   } = useFieldArray<EditTrainingSchema, "trainings_exercices">({
     name: "trainings_exercices",
   })
@@ -45,25 +44,40 @@ export const ExercicesFormPart = ({
     fields: training_supersets,
     append: appendSuperset,
     remove: removeSuperset,
-  } = useFieldArray<EditTrainingSchema, "trainings_superset">({
-    name: "trainings_superset",
+    update: updateSuperset,
+  } = useFieldArray<EditTrainingSchema, "trainings_supersets">({
+    name: "trainings_supersets",
   })
+
+  const form = useFormContext<EditTrainingSchema>()
 
   const training_parts = useMemo(() => {
     const parts: {
       index: number
       field:
-      | FieldArrayWithId<EditTrainingSchema, "trainings_exercices">
-      | FieldArrayWithId<EditTrainingSchema, "trainings_superset">
+        | FieldArrayWithId<EditTrainingSchema, "trainings_exercices">
+        | FieldArrayWithId<EditTrainingSchema, "trainings_supersets">
     }[] = []
-    training_exercices.forEach((tEx, index) => {
-      parts.splice(tEx.order, 0, { index, field: tEx })
-    })
-    training_supersets.forEach((tSuperset, index) => {
-      parts.splice(tSuperset.order, 0, { index, field: tSuperset })
+    parts.push(
+      ...training_exercices.map((tEx, index) => ({ index, field: tEx }))
+    )
+    parts.push(
+      ...training_supersets.map((tEx, index) => ({ index, field: tEx }))
+    )
+    parts.sort((a, b) => a.field.order - b.field.order)
+    parts.forEach((part, index) => {
+      if ("rounds" in part.field) {
+        form.setValue(`trainings_supersets.${part.index}.order`, index + 1)
+        // (part.index, { ...part.field, order: index + 1 })
+      } else {
+        form.setValue(`trainings_exercices.${part.index}.order`, index + 1)
+        // updateExercice(part.index, { ...part.field, order: index + 1 })
+      }
+      parts[index].field.order = index + 1
     })
     return parts
-  }, [training_exercices, training_supersets])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [training_exercices.length, training_supersets.length])
 
   return (
     <Card>
@@ -105,34 +119,26 @@ export const ExercicesFormPart = ({
 }
 
 export const RepOrTimeField = ({
-  fieldIndex,
-  index,
+  name,
+  onChange: customOnChange,
 }: {
-  fieldIndex: number
-  index: number
+  name: string
+  onChange?: (value: string) => void
 }) => {
   const form = useFormContext<EditTrainingSchema>()
 
   const [selected, setSelected] = useState(
-    form.getValues(
-      `trainings_exercices.${fieldIndex}.series.${index}.repetition`
-    ) !== undefined
-      ? "repetition"
-      : "time"
+    form.getValues(name as any) !== undefined ? "repetition" : "time"
   )
   const [open, setOpen] = useState(false)
 
   const onChange = (value: string) => {
+    if (customOnChange) return customOnChange(value)
+
     if (value === "repetition") {
-      form.setValue(
-        `trainings_exercices.${fieldIndex}.series.${index}.time`,
-        undefined
-      )
+      form.setValue(`${name}.time` as any, undefined)
     } else {
-      form.setValue(
-        `trainings_exercices.${fieldIndex}.series.${index}.repetition`,
-        undefined
-      )
+      form.setValue(`${name}.repetition` as any, undefined)
     }
     setSelected(value)
   }
@@ -165,7 +171,7 @@ export const RepOrTimeField = ({
         <>
           <FormField
             control={form.control}
-            name={`trainings_exercices.${fieldIndex}.series.${index}.repetition`}
+            name={`${name}.repetition` as any}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="sr-only">Répétition</FormLabel>
@@ -181,7 +187,7 @@ export const RepOrTimeField = ({
         <>
           <FormField
             control={form.control}
-            name={`trainings_exercices.${fieldIndex}.series.${index}.time`}
+            name={`${name}.time` as any}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="sr-only">Temps d&apos;exercice</FormLabel>

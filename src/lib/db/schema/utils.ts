@@ -30,8 +30,12 @@ export function foreign_id(name: string) {
 export const integerSchema = (min = 1) =>
   z
     .number()
-    .positive()
     .int()
-    .min(min)
+    .min(min - 1)
     .or(z.string())
-    .pipe(z.coerce.number().positive().int().min(min))
+    .pipe(
+      z.coerce
+        .number()
+        .int()
+        .min(min - 1)
+    )

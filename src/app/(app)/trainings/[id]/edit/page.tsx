@@ -38,8 +38,8 @@ export default async function EditTrainingPage({
         order: serie.order,
       })),
     })),
-    trainings_superset: training.trainings_supersets.map((tSuperset) => ({
-      id: tSuperset.id,
+    trainings_supersets: training.trainings_supersets.map((tSuperset) => ({
+      ...tSuperset,
       exercices: tSuperset.exercices.map((sExercice) => ({
         id: sExercice.id,
         order: sExercice.order,
@@ -54,11 +54,8 @@ export default async function EditTrainingPage({
           repetition: serie.repetition ?? undefined,
           time: serie.time ?? undefined,
         })),
-        rest: round.rest,
-        intervalRest: round.intervalRest,
         id: round.id,
       })),
-      order: tSuperset.order,
     })),
   }
 

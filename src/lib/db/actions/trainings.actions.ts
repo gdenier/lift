@@ -32,7 +32,7 @@ export async function getTraining(id: string, userId: string) {
           rounds: { with: { series: true } },
         },
       },
-      sessions: true
+      sessions: true,
     },
     where: (trainings, { eq, and }) =>
       and(eq(trainings.id, id), eq(trainings.userId, userId)),
@@ -68,6 +68,7 @@ export const deleteTraining = withValidation(z.string(), async (id, user) => {
       .from(trainings_exercices)
       .where(eq(trainings_exercices.trainingId, id))
 
+    // TODO: remove all series/rounds/exercices...
     await tx
       .delete(trainings_series)
       .where(inArray(trainings_series.trainingsExercicesId, exercicesQuery))
@@ -84,6 +85,7 @@ export const deleteTraining = withValidation(z.string(), async (id, user) => {
 export const editTraining = withValidation(
   editTrainingSchema,
   async (data, user) => {
+    console.log(data)
     const before = await getTraining(data.id, user.id)
     // UPDATE TRAINING
     await db
@@ -187,9 +189,8 @@ async function updateSupersets(
   data: EditTrainingSchema,
   training: Awaited<ReturnType<typeof getTraining>>
 ) {
-  console.log(data)
   await Promise.all(
-    data.trainings_superset?.map(async (tSuperset) => {
+    data.trainings_supersets?.map(async (tSuperset) => {
       // UPSERT SUPERSET
       const inserted = (
         await db
@@ -198,6 +199,8 @@ async function updateSupersets(
             id: tSuperset.id,
             trainingId: training.id,
             order: tSuperset.order,
+            intervalRest: tSuperset.intervalRest,
+            rest: tSuperset.rest,
           })
           .onConflictDoUpdate({
             target: trainings_supersets.id,
@@ -236,15 +239,11 @@ async function updateSupersets(
                 id: round.id,
                 order: round.order,
                 trainingSupersetId: inserted.id,
-                intervalRest: round.intervalRest,
-                rest: round.rest,
               })
               .onConflictDoUpdate({
                 target: trainings_supersets_rounds.id,
                 set: {
                   order: round.order,
-                  intervalRest: round.intervalRest,
-                  rest: round.rest,
                 },
               })
               .returning()
@@ -273,73 +272,67 @@ async function updateSupersets(
           })
         })
       )
-
-      // DELETE REMOVED SUPERSET
-      const supersetsToDelete = training?.trainings_supersets.filter(
-        (beforeTSuperset) =>
-          !data.trainings_superset
-            ?.map((s) => s.id)
-            .includes(beforeTSuperset.id)
-      )
-      supersetsToDelete?.forEach(async (supersetToDelete) => {
-        await db
-          .delete(trainings_supersets)
-          .where(eq(trainings_exercices.id, supersetToDelete.id))
-      })
-      // DELETE REMOVED EXERCICES
-      const exercicesToDelete = training?.trainings_supersets.flatMap(
-        (superset) => {
-          return superset.exercices.filter(
-            (exercice) =>
-              !data.trainings_superset
-                ?.flatMap((tSuperset) => tSuperset.exercices.map((ex) => ex.id))
-                .includes(exercice.id)
-          )
-        }
-      )
-      exercicesToDelete.forEach(async (exerciceToDelete) => {
-        await db
-          .delete(trainings_supersets_exercices)
-          .where(eq(trainings_supersets_exercices.id, exerciceToDelete.id))
-      })
-      // DELETE REMOVED ROUNDS
-      const roundsToDelete = training?.trainings_supersets.flatMap(
-        (superset) => {
-          return superset.rounds.filter(
-            (round) =>
-              !data.trainings_superset
-                ?.flatMap((tSuperset) => tSuperset.rounds.map((r) => r.id))
-                .includes(round.id)
-          )
-        }
-      )
-      roundsToDelete.forEach(async (roundToDelete) => {
-        await db
-          .delete(trainings_supersets_rounds)
-          .where(eq(trainings_supersets_rounds.id, roundToDelete.id))
-      })
-      // DELETE REMOVED SERIES
-      const seriessToDelete = training?.trainings_supersets.flatMap(
-        (superset) => {
-          return superset.rounds.flatMap((round) => {
-            return round.series.filter(
-              (serie) =>
-                !data.trainings_superset
-                  ?.flatMap((tSuperset) =>
-                    tSuperset.rounds.flatMap((round) =>
-                      round.series.map((s) => s.id)
-                    )
-                  )
-                  .includes(serie.id)
-            )
-          })
-        }
-      )
-      seriessToDelete.forEach(async (serieToDelete) => {
-        await db
-          .delete(trainings_supersets_series)
-          .where(eq(trainings_supersets_series.id, serieToDelete.id))
-      })
     }) ?? []
   )
+
+  // FIXME: ALL REMOVED CAN BE DELETED WHEN CASCADE DELETE WORK
+  // DELETE REMOVED SUPERSET
+  const supersetsToDelete = training?.trainings_supersets.filter(
+    (beforeTSuperset) =>
+      !data.trainings_supersets?.map((s) => s.id).includes(beforeTSuperset.id)
+  )
+  supersetsToDelete?.forEach(async (supersetToDelete) => {
+    await db
+      .delete(trainings_supersets)
+      .where(eq(trainings_supersets.id, supersetToDelete.id))
+  })
+  // DELETE REMOVED EXERCICES
+  const exercicesToDelete = training?.trainings_supersets.flatMap(
+    (superset) => {
+      return superset.exercices.filter(
+        (exercice) =>
+          !data.trainings_supersets
+            ?.flatMap((tSuperset) => tSuperset.exercices.map((ex) => ex.id))
+            .includes(exercice.id)
+      )
+    }
+  )
+  exercicesToDelete.forEach(async (exerciceToDelete) => {
+    await db
+      .delete(trainings_supersets_exercices)
+      .where(eq(trainings_supersets_exercices.id, exerciceToDelete.id))
+  })
+  // DELETE REMOVED ROUNDS
+  const roundsToDelete = training?.trainings_supersets.flatMap((superset) => {
+    return superset.rounds.filter(
+      (round) =>
+        !data.trainings_supersets
+          ?.flatMap((tSuperset) => tSuperset.rounds.map((r) => r.id))
+          .includes(round.id)
+    )
+  })
+  roundsToDelete.forEach(async (roundToDelete) => {
+    await db
+      .delete(trainings_supersets_rounds)
+      .where(eq(trainings_supersets_rounds.id, roundToDelete.id))
+  })
+  // DELETE REMOVED SERIES
+  const seriessToDelete = training?.trainings_supersets.flatMap((superset) => {
+    return superset.rounds.flatMap((round) => {
+      return round.series.filter(
+        (serie) =>
+          !data.trainings_supersets
+            ?.flatMap((tSuperset) =>
+              tSuperset.rounds.flatMap((round) => round.series.map((s) => s.id))
+            )
+            .includes(serie.id)
+      )
+    })
+  })
+  console.log(seriessToDelete.map((s) => s.id))
+  seriessToDelete.forEach(async (serieToDelete) => {
+    await db
+      .delete(trainings_supersets_series)
+      .where(eq(trainings_supersets_series.id, serieToDelete.id))
+  })
 }

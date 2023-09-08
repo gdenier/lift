@@ -1,6 +1,7 @@
 import { MobileNavbar } from "~/components/MobileNavbar"
 import { Sidebar } from "~/components/Sidebar"
 import { Toaster } from "react-hot-toast"
+import { TailwindResponsiveIndicator } from "~/components/TailwindResponsiveIndicator"
 
 export default async function AppLayout({
   children,
@@ -15,6 +16,7 @@ export default async function AppLayout({
       </main>
       <MobileNavbar />
       <Toaster />
+      <TailwindResponsiveIndicator />
     </div>
   )
 }

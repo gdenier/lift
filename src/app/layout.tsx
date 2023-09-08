@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs"
 import "../styles/globals.css"
 import { Inter } from "next/font/google"
 import Head from "next/head"
+import { TailwindResponsiveIndicator } from "~/components/TailwindResponsiveIndicator"
 
 const inter = Inter({ subsets: ["latin"] })
 
