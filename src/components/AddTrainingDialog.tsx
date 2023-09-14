@@ -93,15 +93,15 @@ export const AddTrainingDialog = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4 items-start">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="w-full">
                   <FormLabel>Nom de l&apos;entrainement</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nom de l'entrainement" {...field} />
+                    <Input placeholder="Nom de l'entrainement"  {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

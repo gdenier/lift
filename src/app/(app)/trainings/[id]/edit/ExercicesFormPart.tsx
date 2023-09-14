@@ -36,7 +36,6 @@ export const ExercicesFormPart = ({
     fields: training_exercices,
     append: appendExercice,
     remove: removeExercice,
-    update: updateExercice,
   } = useFieldArray<EditTrainingSchema, "trainings_exercices">({
     name: "trainings_exercices",
   })
@@ -44,7 +43,6 @@ export const ExercicesFormPart = ({
     fields: training_supersets,
     append: appendSuperset,
     remove: removeSuperset,
-    update: updateSuperset,
   } = useFieldArray<EditTrainingSchema, "trainings_supersets">({
     name: "trainings_supersets",
   })
@@ -73,7 +71,6 @@ export const ExercicesFormPart = ({
       }
       parts[index].field.order = index + 1
     })
-    console.log(parts)
     return parts
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [training_exercices.length, training_supersets.length])
@@ -121,9 +118,7 @@ export const RepOrTimeField = ({ name }: { name: string }) => {
   const form = useFormContext<EditTrainingSchema>()
 
   const [selected, setSelected] = useState(
-    form.getValues(`${name}.repetition` as any) !== undefined
-      ? "repetition"
-      : "time"
+    form.getValues(`${name}.time` as any) !== undefined ? "time" : "repetition"
   )
   const [open, setOpen] = useState(false)
 
@@ -135,8 +130,6 @@ export const RepOrTimeField = ({ name }: { name: string }) => {
     }
     setSelected(value)
   }
-
-  console.log(form.getValues(name as any))
 
   return (
     <div className="flex w-[110px] min-w-[110px] max-w-[110px] flex-col">
@@ -162,7 +155,6 @@ export const RepOrTimeField = ({ name }: { name: string }) => {
           <SelectItem value="time">Temps</SelectItem>
         </SelectContent>
       </Select>
-      {selected}
       {selected === "repetition" ? (
         <>
           <FormField

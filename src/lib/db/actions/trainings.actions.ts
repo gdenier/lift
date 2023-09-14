@@ -62,21 +62,45 @@ export const createTraining = withValidation(
 )
 
 export const deleteTraining = withValidation(z.string(), async (id, user) => {
-  await db.transaction(async (tx) => {
-    const exercicesQuery = tx
-      .select({ id: trainings_exercices.id })
-      .from(trainings_exercices)
-      .where(eq(trainings_exercices.trainingId, id))
+  const deletedExercices = await db
+    .delete(trainings_exercices)
+    .where(eq(trainings_exercices.trainingId, id))
+    .returning({ id: trainings_exercices.id })
+  await db.delete(trainings_series).where(
+    inArray(
+      trainings_series.trainingsExercicesId,
+      deletedExercices.map((d) => d.id)
+    )
+  )
 
-    // TODO: remove all series/rounds/exercices...
-    await tx
-      .delete(trainings_series)
-      .where(inArray(trainings_series.trainingsExercicesId, exercicesQuery))
-    await tx
-      .delete(trainings_exercices)
-      .where(eq(trainings_exercices.trainingId, id))
-    await tx.delete(trainings).where(eq(trainings.id, id))
-  })
+  const deletedSupersets = await db
+    .delete(trainings_supersets)
+    .where(eq(trainings_supersets.trainingId, id))
+    .returning({ id: trainings_supersets.id })
+  await db.delete(trainings_supersets_exercices).where(
+    inArray(
+      trainings_supersets_exercices.trainingSupersetId,
+      deletedSupersets.map((d) => d.id)
+    )
+  )
+  const deletedSupersetsRounds = await db
+    .delete(trainings_supersets_rounds)
+    .where(
+      inArray(
+        trainings_supersets_rounds.trainingSupersetId,
+        deletedSupersets.map((d) => d.id)
+      )
+    )
+    .returning({ id: trainings_supersets_rounds.id })
+  await db.delete(trainings_supersets_series).where(
+    inArray(
+      trainings_supersets_series.trainingsSupersetsRoundsId,
+      deletedSupersetsRounds.map((d) => d.id)
+    )
+  )
+
+  await db.delete(trainings).where(eq(trainings.id, id))
+
   revalidatePath("/")
   revalidatePath(`/trainings/${id}`)
   redirect("/")
