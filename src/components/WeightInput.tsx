@@ -54,7 +54,6 @@ export const WeightInput = <
               name={name}
               defaultValue={defaultValue}
               onChange={(e) => {
-                console.log(e.target.value)
                 const kg = +e.target.value.split(".")[0]
                 let gramme = e.target.value.split(".")[1] ?? "0"
                 gramme =

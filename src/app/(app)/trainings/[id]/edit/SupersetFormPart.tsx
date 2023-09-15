@@ -19,7 +19,7 @@ import {
   useFormContext,
   useWatch,
 } from "react-hook-form"
-import { Button } from "~/components/ui/button"
+import { Button, buttonVariants } from "~/components/ui/button"
 import {
   FormControl,
   FormField,
@@ -36,19 +36,22 @@ import {
   SheetFooter,
   SheetClose,
 } from "~/components/ui/sheet"
-import { Trash } from "lucide-react"
+import { Menu, Trash } from "lucide-react"
 import { Input } from "~/components/ui/input"
 import { RepOrTimeField } from "./ExercicesFormPart"
+import { Draggable } from "react-beautiful-dnd"
 
 export const SupersetFormPart = ({
   field,
-  index,
+  listIndex,
+  superSetIndex,
   exercices,
   removeSuperset,
 }: {
   field: FieldArrayWithId<EditTrainingSchema, "trainings_supersets">
   removeSuperset: UseFieldArrayRemove
-  index: number
+  listIndex: number
+  superSetIndex: number
   exercices: Exercice[]
 }): ReactElement => {
   const form = useFormContext<EditTrainingSchema>()
@@ -56,63 +59,72 @@ export const SupersetFormPart = ({
   const roundFieldArray = useFieldArray<
     EditTrainingSchema,
     `trainings_supersets.${number}.rounds`
-  >({ name: `trainings_supersets.${index}.rounds` })
+  >({ name: `trainings_supersets.${superSetIndex}.rounds` })
 
   const exerciceFieldArray = useFieldArray<
     EditTrainingSchema,
     `trainings_supersets.${number}.exercices`
-  >({ name: `trainings_supersets.${index}.exercices` })
+  >({ name: `trainings_supersets.${superSetIndex}.exercices` })
 
   return (
-    <div
-      key={field.id}
-      className="flex w-full items-start justify-stretch gap-2"
-    >
-      <FormField
-        control={form.control}
-        name={`trainings_supersets.${index}.order`}
-        render={({ field }) => (
-          <p className="flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground">
-            {field.value}
-          </p>
-        )}
-      />
-      <div className="w-full">
-        <div className="flex w-full gap-2">
-          <SupersetSettingsDialog
-            index={index}
-            removeSuperset={removeSuperset}
-            superset={field}
-            replaceRound={roundFieldArray.replace}
+    <Draggable draggableId={`item-${listIndex}`} index={listIndex}>
+      {(provided, snapshot) => (
+        <div
+          key={field.id}
+          className="flex w-full items-start justify-stretch gap-2"
+          {...provided.draggableProps}
+          ref={provided.innerRef}
+        >
+          <FormField
+            control={form.control}
+            name={`trainings_supersets.${superSetIndex}.order`}
+            render={({ field }) => (
+              <p
+                className="flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded bg-primary text-primary-foreground"
+                {...provided.dragHandleProps}
+              >
+                {field.value}
+              </p>
+            )}
           />
-          <SupersetAddExerciceDialog
-            exercices={exercices}
-            supersetIndex={index}
-          />
+          <div className="w-full">
+            <div className="flex w-full gap-2">
+              <SupersetSettingsDialog
+                index={superSetIndex}
+                removeSuperset={removeSuperset}
+                superset={field}
+                replaceRound={roundFieldArray.replace}
+              />
+              <SupersetAddExerciceDialog
+                exercices={exercices}
+                supersetIndex={superSetIndex}
+              />
+            </div>
+            <ul>
+              {exerciceFieldArray.fields
+                .sort((a, b) => a.order - b.order)
+                .map((exercice) => (
+                  <li key={exercice.id}>
+                    <SupersetExerciceDialog
+                      exercice={
+                        exercices.find((ex) => ex.id === exercice.exerciceId)!
+                      }
+                      supersetIndex={superSetIndex}
+                      removeExercice={() => {
+                        exerciceFieldArray.remove(
+                          exerciceFieldArray.fields.findIndex(
+                            (f) => f.order === exercice.order
+                          )
+                        )
+                      }}
+                    />
+                  </li>
+                ))}
+            </ul>
+          </div>
         </div>
-        <ul>
-          {exerciceFieldArray.fields
-            .sort((a, b) => a.order - b.order)
-            .map((exercice) => (
-              <li key={exercice.id}>
-                <SupersetExerciceDialog
-                  exercice={
-                    exercices.find((ex) => ex.id === exercice.exerciceId)!
-                  }
-                  supersetIndex={index}
-                  removeExercice={() => {
-                    exerciceFieldArray.remove(
-                      exerciceFieldArray.fields.findIndex(
-                        (f) => f.order === exercice.order
-                      )
-                    )
-                  }}
-                />
-              </li>
-            ))}
-        </ul>
-      </div>
-    </div>
+      )}
+    </Draggable>
   )
 }
 
@@ -306,7 +318,6 @@ const SupersetAddExerciceDialog = ({
                   order: supersetExercices.length + 1 + index,
                 }))
               )
-              console.log(supersetExercices)
               form.setValue(
                 `trainings_supersets.${supersetIndex}.exercices`,
                 supersetExercices
@@ -325,7 +336,6 @@ const SupersetAddExerciceDialog = ({
                 )
                 return round
               })
-              console.log(supersetRounds)
               form.setValue(
                 `trainings_supersets.${supersetIndex}.rounds`,
                 supersetRounds
@@ -394,7 +404,6 @@ const SupersetSettingsDialog = ({
                   defaultValue={rounds.length}
                   onChange={(event) => {
                     const nbRound = +event.target.value
-                    console.log(nbRound)
                     if (nbRound > rounds.length) {
                       let order = rounds.length
                       return replaceRound([

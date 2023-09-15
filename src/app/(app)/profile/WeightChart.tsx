@@ -14,20 +14,21 @@ export const WeightChart = ({
   data: ProfileWeight[]
 }): ReactElement => {
   const parsedData = useMemo(() => {
-    const parsedData = data.map((weight) => ({
-      y: weight.value,
-      x: weight.date.toLocaleString(),
-    }))??[]
+    const parsedData =
+      data.map((weight) => ({
+        y: weight.value,
+        x: weight.date.toLocaleString(),
+      })) ?? []
     return { id: "weight", color: "var(--primary)", data: parsedData }
   }, [data])
 
   const min = parsedData.data.reduce(
     (min, parsed) => (parsed.y < min ? parsed.y : min),
-    parsedData.data[0]?.y??0
+    parsedData.data[0]?.y ?? 0
   )
   const max = parsedData.data.reduce(
     (max, parsed) => (parsed.y > max ? parsed.y : max),
-    parsedData.data[0]?.y??0
+    parsedData.data[0]?.y ?? 0
   )
 
   const format = (value: Date) =>
@@ -60,7 +61,6 @@ export const WeightChart = ({
         tickPadding: 5,
         tickRotation: 0,
         format: (val) => {
-          console.log(format(new Date(val)))
           return timeScaleTicks.includes(format(new Date(val)))
             ? format(new Date(val))
             : ""
@@ -86,7 +86,7 @@ export const WeightChart = ({
         size: 2,
       }}
       enableArea
-      areaBaselineValue={min-10000}
+      areaBaselineValue={min - 10000}
       defs={[
         // using helpers
         // will inherit colors from current element

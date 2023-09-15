@@ -143,14 +143,14 @@ async function updateExercices(
     (beforeTExercice) =>
       !data.trainings_exercices?.map((s) => s.id).includes(beforeTExercice.id)
   )
-  exercicesToDelete?.forEach(async (exerciceToDelete) => {
+  for (const exerciceToDelete of exercicesToDelete) {
     await db
       .delete(trainings_exercices)
       .where(eq(trainings_exercices.id, exerciceToDelete.id))
     await db
       .delete(trainings_series)
       .where(eq(trainings_series.trainingsExercicesId, exerciceToDelete.id))
-  })
+  }
 }
 
 async function createOrUpdateExercice(
@@ -158,17 +158,23 @@ async function createOrUpdateExercice(
   tExercice: NonNullable<EditTrainingSchema["trainings_exercices"]>[number]
 ) {
   let inserted: Partial<TrainingExercice>
-  if (!tExercice.id)
-    inserted = (
-      await db
-        .insert(trainings_exercices)
-        .values({
-          exerciceId: tExercice.exerciceId,
-          trainingId: training.id,
+  inserted = (
+    await db
+      .insert(trainings_exercices)
+      .values({
+        id: tExercice.id,
+        exerciceId: tExercice.exerciceId,
+        trainingId: training.id,
+        order: tExercice.order,
+      })
+      .onConflictDoUpdate({
+        target: trainings_exercices.id,
+        set: {
           order: tExercice.order,
-        })
-        .returning()
-    )[0]
+        },
+      })
+      .returning()
+  )[0]
 
   // UPSERT SERIE
   tExercice.series?.forEach(async (serie) => {

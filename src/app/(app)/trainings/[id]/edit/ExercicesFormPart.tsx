@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactElement, useMemo, useState } from "react"
+import { ReactElement, useCallback, useEffect, useMemo, useState } from "react"
 import {
   FieldArrayWithId,
   FieldName,
@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { EditTrainingSchema, Exercice } from "~/lib/db/schema"
+import { EditTrainingSchema, Exercice, TrainingExercice } from "~/lib/db/schema"
 import {
   Select,
   SelectContent,
@@ -26,6 +26,11 @@ import {
 } from "~/components/ui/select"
 import { AddExerciceDialog, ExerciceFormPart } from "./ExerciceFormPart"
 import { AddSupersetDialog, SupersetFormPart } from "./SupersetFormPart"
+import {
+  DragDropContext,
+  Droppable,
+  OnDragEndResponder,
+} from "react-beautiful-dnd"
 
 export const ExercicesFormPart = ({
   exercices,
@@ -36,6 +41,7 @@ export const ExercicesFormPart = ({
     fields: training_exercices,
     append: appendExercice,
     remove: removeExercice,
+    move: moveExercice,
   } = useFieldArray<EditTrainingSchema, "trainings_exercices">({
     name: "trainings_exercices",
   })
@@ -43,37 +49,131 @@ export const ExercicesFormPart = ({
     fields: training_supersets,
     append: appendSuperset,
     remove: removeSuperset,
+    move: moveSuperset,
   } = useFieldArray<EditTrainingSchema, "trainings_supersets">({
     name: "trainings_supersets",
   })
 
   const form = useFormContext<EditTrainingSchema>()
 
-  const training_parts = useMemo(() => {
-    const parts: {
+  const reorderTrainingParts = useCallback(
+    (
+      exercices: FieldArrayWithId<EditTrainingSchema, "trainings_exercices">[],
+      supersets: FieldArrayWithId<EditTrainingSchema, "trainings_supersets">[]
+    ) => {
+      const parts: {
+        index: number
+        field:
+          | FieldArrayWithId<EditTrainingSchema, "trainings_exercices">
+          | FieldArrayWithId<EditTrainingSchema, "trainings_supersets">
+      }[] = []
+      parts.push(
+        ...(exercices?.map((tEx, index) => ({ index, field: tEx })) ?? [])
+      )
+      parts.push(
+        ...(supersets?.map((tEx, index) => ({ index, field: tEx })) ?? [])
+      )
+      parts.sort((a, b) => a.field.order - b.field.order)
+      parts.forEach((part, index) => {
+        if ("rounds" in part.field) {
+          form.setValue(`trainings_supersets.${part.index}.order`, index + 1)
+        } else {
+          form.setValue(`trainings_exercices.${part.index}.order`, index + 1)
+        }
+        parts[index].field.order = index + 1
+      })
+      return parts
+    },
+    []
+  )
+
+  const [training_parts, setTrainingParts] = useState<
+    {
       index: number
       field:
         | FieldArrayWithId<EditTrainingSchema, "trainings_exercices">
         | FieldArrayWithId<EditTrainingSchema, "trainings_supersets">
-    }[] = []
-    parts.push(
-      ...training_exercices.map((tEx, index) => ({ index, field: tEx }))
+    }[]
+  >()
+  useEffect(() => {
+    setTrainingParts(
+      reorderTrainingParts(training_exercices, training_supersets)
     )
-    parts.push(
-      ...training_supersets.map((tEx, index) => ({ index, field: tEx }))
-    )
-    parts.sort((a, b) => a.field.order - b.field.order)
-    parts.forEach((part, index) => {
-      if ("rounds" in part.field) {
-        form.setValue(`trainings_supersets.${part.index}.order`, index + 1)
-      } else {
-        form.setValue(`trainings_exercices.${part.index}.order`, index + 1)
-      }
-      parts[index].field.order = index + 1
-    })
-    return parts
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [training_exercices.length, training_supersets.length])
+  }, [
+    training_exercices.length,
+    training_supersets.length,
+    reorderTrainingParts,
+  ])
+
+  const handleDrag: OnDragEndResponder = ({ source, destination }) => {
+    if (!destination || !training_parts) return
+
+    const sourcePart = training_parts[source.index]
+    const destinationPart = training_parts[destination.index]
+
+    // if dragged element is moved to top
+    if (source.index > destination.index) {
+      training_parts?.slice(destination.index, source.index).forEach((part) => {
+        if ("rounds" in part.field) {
+          const oldOrder = form.getValues(
+            `trainings_supersets.${part.index}.order`
+          )
+          return form.setValue(
+            `trainings_supersets.${part.index}.order`,
+            oldOrder + 1
+          )
+        }
+        const oldOrder = form.getValues(
+          `trainings_exercices.${part.index}.order`
+        )
+        form.setValue(`trainings_exercices.${part.index}.order`, oldOrder + 1)
+      })
+    }
+    // if dragged element is moved to bottom
+    else {
+      training_parts?.slice(source.index, destination.index).forEach((part) => {
+        if ("rounds" in part.field) {
+          const oldOrder = form.getValues(
+            `trainings_supersets.${part.index}.order`
+          )
+          return form.setValue(
+            `trainings_supersets.${part.index}.order`,
+            oldOrder - 1
+          )
+        }
+        const oldOrder = form.getValues(
+          `trainings_exercices.${part.index}.order`
+        )
+        form.setValue(`trainings_exercices.${part.index}.order`, oldOrder - 1)
+      })
+    }
+
+    if ("rounds" in sourcePart.field) {
+      form.setValue(
+        `trainings_supersets.${sourcePart.index}.order`,
+        destinationPart.field.order
+      )
+    } else {
+      form.setValue(
+        `trainings_exercices.${sourcePart.index}.order`,
+        destinationPart.field.order
+      )
+    }
+
+    setTrainingParts(() =>
+      reorderTrainingParts(
+        (form.getValues("trainings_exercices") ?? []) as FieldArrayWithId<
+          EditTrainingSchema,
+          "trainings_exercices"
+        >[],
+        (form.getValues("trainings_supersets") ?? []) as FieldArrayWithId<
+          EditTrainingSchema,
+          "trainings_supersets"
+        >[]
+      )
+    )
+  }
 
   return (
     <Card>
@@ -85,30 +185,40 @@ export const ExercicesFormPart = ({
         </div>
       </CardHeader>
       <CardContent>
-        <ul className="flex w-full flex-col gap-px">
-          {training_parts.map(({ field, index }) => {
-            if ("rounds" in field) {
-              return (
-                <SupersetFormPart
-                  key={field.id}
-                  exercices={exercices}
-                  field={field}
-                  index={index}
-                  removeSuperset={removeSuperset}
-                />
-              )
-            }
-            return (
-              <ExerciceFormPart
-                key={field.id}
-                exercices={exercices}
-                field={field}
-                index={index}
-                removeExercice={removeExercice}
-              />
-            )
-          })}
-        </ul>
+        <DragDropContext onDragEnd={handleDrag}>
+          <ul className="flex w-full flex-col gap-px">
+            <Droppable droppableId="test-items">
+              {(provided, snapshot) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  {training_parts?.map(({ field, index: partIndex }, index) => {
+                    if ("rounds" in field) {
+                      return (
+                        <SupersetFormPart
+                          key={field.id}
+                          exercices={exercices}
+                          field={field}
+                          superSetIndex={partIndex}
+                          listIndex={index}
+                          removeSuperset={removeSuperset}
+                        />
+                      )
+                    }
+                    return (
+                      <ExerciceFormPart
+                        key={field.id}
+                        exercices={exercices}
+                        field={field}
+                        exerciceIndex={partIndex}
+                        listIndex={index}
+                        removeExercice={removeExercice}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            </Droppable>
+          </ul>
+        </DragDropContext>
       </CardContent>
     </Card>
   )
