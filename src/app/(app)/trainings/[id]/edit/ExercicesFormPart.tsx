@@ -31,6 +31,7 @@ import {
   Droppable,
   OnDragEndResponder,
 } from "react-beautiful-dnd"
+import { useDraggable } from "~/lib/dnd/hooks/useDraggable"
 
 export const ExercicesFormPart = ({
   exercices,
@@ -84,6 +85,7 @@ export const ExercicesFormPart = ({
       })
       return parts
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )
 
@@ -107,47 +109,27 @@ export const ExercicesFormPart = ({
   ])
 
   const handleDrag: OnDragEndResponder = ({ source, destination }) => {
-    if (!destination || !training_parts) return
+    if (!destination || !training_parts || source.index == destination.index)
+      return
 
-    const sourcePart = training_parts[source.index]
-    const destinationPart = training_parts[destination.index]
+    const sourcePart = structuredClone(training_parts[source.index])
+    const destinationPart = structuredClone(training_parts[destination.index])
 
-    // if dragged element is moved to top
-    if (source.index > destination.index) {
-      training_parts?.slice(destination.index, source.index).forEach((part) => {
-        if ("rounds" in part.field) {
-          const oldOrder = form.getValues(
-            `trainings_supersets.${part.index}.order`
-          )
-          return form.setValue(
-            `trainings_supersets.${part.index}.order`,
-            oldOrder + 1
-          )
-        }
-        const oldOrder = form.getValues(
-          `trainings_exercices.${part.index}.order`
-        )
-        form.setValue(`trainings_exercices.${part.index}.order`, oldOrder + 1)
-      })
-    }
-    // if dragged element is moved to bottom
-    else {
-      training_parts?.slice(source.index, destination.index).forEach((part) => {
-        if ("rounds" in part.field) {
-          const oldOrder = form.getValues(
-            `trainings_supersets.${part.index}.order`
-          )
-          return form.setValue(
-            `trainings_supersets.${part.index}.order`,
-            oldOrder - 1
-          )
-        }
-        const oldOrder = form.getValues(
-          `trainings_exercices.${part.index}.order`
-        )
-        form.setValue(`trainings_exercices.${part.index}.order`, oldOrder - 1)
-      })
-    }
+    const start =
+      source.index > destination.index ? destination.index : source.index + 1
+    const end =
+      source.index > destination.index ? source.index : destination.index + 1
+
+    training_parts?.slice(start, end).forEach((part) => {
+      const name =
+        "rounds" in part.field
+          ? `trainings_supersets.${part.index}.order`
+          : `trainings_exercices.${part.index}.order`
+      const updatedOrder =
+        form.getValues(name as any) +
+        (source.index > destination.index ? 1 : -1)
+      form.setValue(name as any, updatedOrder)
+    })
 
     if ("rounds" in sourcePart.field) {
       form.setValue(
@@ -175,6 +157,8 @@ export const ExercicesFormPart = ({
     )
   }
 
+  const draggable = useDraggable({ onDragEnd: handleDrag })
+
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
@@ -185,16 +169,23 @@ export const ExercicesFormPart = ({
         </div>
       </CardHeader>
       <CardContent>
-        <DragDropContext onDragEnd={handleDrag}>
+        <DragDropContext
+          onDragEnd={(result, provided) => {
+            draggable.handleDragEnd(result, provided)
+            // handleDrag(result, provided)
+          }}
+          onDragStart={draggable.handleDragStart}
+          onDragUpdate={draggable.handleDragUpdate}
+        >
           <ul className="flex w-full flex-col gap-px">
-            <Droppable droppableId="test-items">
+            <Droppable droppableId="droppable-exercices">
               {(provided, snapshot) => (
                 <div {...provided.droppableProps} ref={provided.innerRef}>
                   {training_parts?.map(({ field, index: partIndex }, index) => {
                     if ("rounds" in field) {
                       return (
                         <SupersetFormPart
-                          key={field.id}
+                          key={`exercices-item-${index}`}
                           exercices={exercices}
                           field={field}
                           superSetIndex={partIndex}
@@ -205,7 +196,7 @@ export const ExercicesFormPart = ({
                     }
                     return (
                       <ExerciceFormPart
-                        key={field.id}
+                        key={`exercices-item-${index}`}
                         exercices={exercices}
                         field={field}
                         exerciceIndex={partIndex}
@@ -214,6 +205,19 @@ export const ExercicesFormPart = ({
                       />
                     )
                   })}
+                  {provided.placeholder}
+                  {!draggable.placeholderProps === undefined &&
+                    snapshot.isDraggingOver && (
+                      <div
+                        className="placeholder"
+                        style={{
+                          top: draggable.placeholderProps?.clientY,
+                          left: draggable.placeholderProps?.clientX,
+                          height: draggable.placeholderProps?.clientHeight,
+                          width: draggable.placeholderProps?.clientWidth,
+                        }}
+                      />
+                    )}
                 </div>
               )}
             </Droppable>

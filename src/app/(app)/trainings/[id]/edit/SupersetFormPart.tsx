@@ -67,12 +67,13 @@ export const SupersetFormPart = ({
   >({ name: `trainings_supersets.${superSetIndex}.exercices` })
 
   return (
-    <Draggable draggableId={`item-${listIndex}`} index={listIndex}>
+    <Draggable draggableId={`exercices-item-${listIndex}`} index={listIndex}>
       {(provided, snapshot) => (
-        <div
+        <li
           key={field.id}
           className="flex w-full items-start justify-stretch gap-2"
           {...provided.draggableProps}
+          {...provided.dragHandleProps}
           ref={provided.innerRef}
         >
           <FormField
@@ -122,7 +123,7 @@ export const SupersetFormPart = ({
                 ))}
             </ul>
           </div>
-        </div>
+        </li>
       )}
     </Draggable>
   )

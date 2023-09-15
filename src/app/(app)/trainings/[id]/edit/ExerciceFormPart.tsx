@@ -54,12 +54,13 @@ export const ExerciceFormPart = ({
   const form = useFormContext<EditTrainingSchema>()
 
   return (
-    <Draggable draggableId={`item-${listIndex}`} index={listIndex}>
+    <Draggable draggableId={`exercices-item-${listIndex}`} index={listIndex}>
       {(provided, snapshot) => (
         <div
           key={field.id}
           className="flex w-full items-center justify-stretch gap-2"
           {...provided.draggableProps}
+          {...provided.dragHandleProps}
           ref={provided.innerRef}
         >
           <FormField
