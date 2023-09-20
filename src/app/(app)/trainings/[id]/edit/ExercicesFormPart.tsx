@@ -1,37 +1,23 @@
 "use client"
 
-import { ReactElement, useCallback, useEffect, useMemo, useState } from "react"
+import { ReactElement, useCallback, useEffect, useState } from "react"
 import {
   FieldArrayWithId,
-  FieldName,
   useFieldArray,
   useFormContext,
 } from "react-hook-form"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import {
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "~/components/ui/form"
-import { Input } from "~/components/ui/input"
-import { EditTrainingSchema, Exercice, TrainingExercice } from "~/lib/db/schema"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select"
-import { AddExerciceDialog, ExerciceFormPart } from "./ExerciceFormPart"
-import { AddSupersetDialog, SupersetFormPart } from "./SupersetFormPart"
+import { EditTrainingSchema, Exercice } from "~/lib/db/schema"
+import { ExerciceFormPart } from "./exercice/ExerciceFormPart"
+import { AddExerciceDialog } from "./exercice/AddExerciceDialog"
+import { SupersetFormPart } from "./superset/SupersetFormPart"
 import {
   DragDropContext,
   Droppable,
   OnDragEndResponder,
 } from "react-beautiful-dnd"
 import { useDraggable } from "~/lib/dnd/hooks/useDraggable"
+import { AddSupersetDialog } from "./superset/AddSupersetDialog"
 
 export const ExercicesFormPart = ({
   exercices,
@@ -42,18 +28,21 @@ export const ExercicesFormPart = ({
     fields: training_exercices,
     append: appendExercice,
     remove: removeExercice,
-    move: moveExercice,
   } = useFieldArray<EditTrainingSchema, "trainings_exercices">({
     name: "trainings_exercices",
   })
+  const supersetFieldArray = useFieldArray<
+    EditTrainingSchema,
+    "trainings_supersets"
+  >({
+    name: "trainings_supersets",
+  })
+
   const {
     fields: training_supersets,
     append: appendSuperset,
     remove: removeSuperset,
-    move: moveSuperset,
-  } = useFieldArray<EditTrainingSchema, "trainings_supersets">({
-    name: "trainings_supersets",
-  })
+  } = supersetFieldArray
 
   const form = useFormContext<EditTrainingSchema>()
 
@@ -172,136 +161,59 @@ export const ExercicesFormPart = ({
         <DragDropContext
           onDragEnd={(result, provided) => {
             draggable.handleDragEnd(result, provided)
-            // handleDrag(result, provided)
           }}
           onDragStart={draggable.handleDragStart}
           onDragUpdate={draggable.handleDragUpdate}
         >
-          <ul className="flex w-full flex-col gap-px">
-            <Droppable droppableId="droppable-exercices">
-              {(provided, snapshot) => (
-                <div {...provided.droppableProps} ref={provided.innerRef}>
-                  {training_parts?.map(({ field, index: partIndex }, index) => {
-                    if ("rounds" in field) {
-                      return (
-                        <SupersetFormPart
-                          key={`exercices-item-${index}`}
-                          exercices={exercices}
-                          field={field}
-                          superSetIndex={partIndex}
-                          listIndex={index}
-                          removeSuperset={removeSuperset}
-                        />
-                      )
-                    }
+          <Droppable droppableId="droppable-exercices">
+            {(provided, snapshot) => (
+              <ul
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="flex w-full flex-col gap-2"
+              >
+                {training_parts?.map(({ field, index: partIndex }, index) => {
+                  if ("rounds" in field) {
                     return (
-                      <ExerciceFormPart
+                      <SupersetFormPart
                         key={`exercices-item-${index}`}
                         exercices={exercices}
                         field={field}
-                        exerciceIndex={partIndex}
+                        superSetIndex={partIndex}
                         listIndex={index}
-                        removeExercice={removeExercice}
+                        supersetFieldArray={supersetFieldArray}
                       />
                     )
-                  })}
-                  {provided.placeholder}
-                  {!draggable.placeholderProps === undefined &&
-                    snapshot.isDraggingOver && (
-                      <div
-                        className="placeholder"
-                        style={{
-                          top: draggable.placeholderProps?.clientY,
-                          left: draggable.placeholderProps?.clientX,
-                          height: draggable.placeholderProps?.clientHeight,
-                          width: draggable.placeholderProps?.clientWidth,
-                        }}
-                      />
-                    )}
-                </div>
-              )}
-            </Droppable>
-          </ul>
+                  }
+                  return (
+                    <ExerciceFormPart
+                      key={`exercices-item-${index}`}
+                      exercices={exercices}
+                      field={field}
+                      exerciceIndex={partIndex}
+                      listIndex={index}
+                      removeExercice={removeExercice}
+                    />
+                  )
+                })}
+                {provided.placeholder}
+                {!draggable.placeholderProps === undefined &&
+                  snapshot.isDraggingOver && (
+                    <div
+                      className="placeholder"
+                      style={{
+                        top: draggable.placeholderProps?.clientY,
+                        left: draggable.placeholderProps?.clientX,
+                        height: draggable.placeholderProps?.clientHeight,
+                        width: draggable.placeholderProps?.clientWidth,
+                      }}
+                    />
+                  )}
+              </ul>
+            )}
+          </Droppable>
         </DragDropContext>
       </CardContent>
     </Card>
-  )
-}
-
-export const RepOrTimeField = ({ name }: { name: string }) => {
-  const form = useFormContext<EditTrainingSchema>()
-
-  const [selected, setSelected] = useState(
-    form.getValues(`${name}.time` as any) !== undefined ? "time" : "repetition"
-  )
-  const [open, setOpen] = useState(false)
-
-  const onChange = (value: string) => {
-    if (value === "repetition") {
-      form.setValue(`${name}.time` as any, undefined)
-    } else {
-      form.setValue(`${name}.repetition` as any, undefined)
-    }
-    setSelected(value)
-  }
-
-  return (
-    <div className="flex w-[110px] min-w-[110px] max-w-[110px] flex-col">
-      <Select
-        defaultValue={selected}
-        onValueChange={onChange}
-        open={open}
-        onOpenChange={() => {
-          // hack for radix select on touch device
-          // issue: https://github.com/radix-ui/primitives/issues/1658
-          if (open)
-            setTimeout(() => {
-              setOpen((open) => !open)
-            }, 50)
-          else setOpen((open) => !open)
-        }}
-      >
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="repetition">Répétition</SelectItem>
-          <SelectItem value="time">Temps</SelectItem>
-        </SelectContent>
-      </Select>
-      {selected === "repetition" ? (
-        <>
-          <FormField
-            control={form.control}
-            name={`${name}.repetition` as any}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="sr-only">Répétition</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="10" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      ) : (
-        <>
-          <FormField
-            control={form.control}
-            name={`${name}.time` as any}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="sr-only">Temps d&apos;exercice</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="120" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      )}
-    </div>
   )
 }

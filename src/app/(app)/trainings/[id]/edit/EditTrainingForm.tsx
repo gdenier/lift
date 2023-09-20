@@ -20,6 +20,7 @@ import { ExercicesFormPart } from "./ExercicesFormPart"
 import { Button, buttonVariants } from "~/components/ui/button"
 import Link from "next/link"
 import { RotateCw, Trash, Undo2 } from "lucide-react"
+import { infer } from "zod"
 
 export const EditTrainingForm = ({
   onSubmit,

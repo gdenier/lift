@@ -25,12 +25,34 @@ export async function getTraining(id: string, userId: string) {
     with: {
       trainings_exercices: {
         with: { exercice: true, series: true },
+        orderBy: (trainings_exercices, { asc }) => [
+          asc(trainings_exercices.order),
+        ],
       },
       trainings_supersets: {
         with: {
-          exercices: { with: { exercice: true } },
-          rounds: { with: { series: true } },
+          exercices: {
+            with: { exercice: true },
+            orderBy: (trainings_supersets_exercices, { asc }) => [
+              asc(trainings_supersets_exercices.order),
+            ],
+          },
+          rounds: {
+            with: {
+              series: {
+                orderBy: (trainings_supersets_series, { asc }) => [
+                  asc(trainings_supersets_series.order),
+                ],
+              },
+            },
+            orderBy: (trainings_supersets_rounds, { asc }) => [
+              asc(trainings_supersets_rounds.order),
+            ],
+          },
         },
+        orderBy: (trainings_supersets, { asc }) => [
+          asc(trainings_supersets.order),
+        ],
       },
       sessions: true,
     },
