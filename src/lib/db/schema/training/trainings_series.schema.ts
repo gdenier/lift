@@ -38,7 +38,7 @@ export var trainingSerieSchema = z.object({
   weight: integerSchema(0).optional(),
   repetition: integerSchema(0).optional(),
   time: integerSchema(0).optional(),
-  rest: integerSchema(0).optional(),
+  rest: integerSchema(0),
   order: integerSchema(0),
   trainingExerciceId: z.string().ulid(),
 })
