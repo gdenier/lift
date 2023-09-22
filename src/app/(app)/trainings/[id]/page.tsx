@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs"
 import { redirect } from "next/navigation"
 import { NotFound } from "~/components/NotFound"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import { getTraining } from "~/lib/db/actions/trainings.actions"
+import { getTraining } from "~/lib/db/actions/trainings.actions.old"
 import {
   Exercice,
   Serie,

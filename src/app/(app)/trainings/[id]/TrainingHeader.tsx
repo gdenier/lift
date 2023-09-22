@@ -2,7 +2,7 @@ import { Edit } from "lucide-react"
 import Link from "next/link"
 import { buttonVariants } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import { getTraining } from "~/lib/db/actions/trainings.actions"
+import { getTraining } from "~/lib/db/actions/trainings.actions.old"
 import { formatTime, formatWeight } from "~/lib/utils"
 
 export const TrainingHeader = ({

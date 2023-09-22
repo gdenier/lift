@@ -14,9 +14,9 @@ import { Label } from "./ui/label"
 import { Input } from "./ui/input"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { createTrainingSchema } from "~/lib/db/schema/trainings.schema"
+import { createTrainingSchema } from "~/lib/db/schema/training/trainings.schema"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { createTraining } from "~/lib/db/actions/trainings.actions"
+import { createTraining } from "~/lib/db/actions/trainings.actions.old"
 import { createFormData } from "~/lib/utils"
 import { redirect } from "next/navigation"
 import {
@@ -93,7 +93,10 @@ export const AddTrainingDialog = ({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4 items-start">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="flex flex-col items-start gap-4"
+          >
             <FormField
               control={form.control}
               name="title"
@@ -101,7 +104,7 @@ export const AddTrainingDialog = ({
                 <FormItem className="w-full">
                   <FormLabel>Nom de l&apos;entrainement</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nom de l'entrainement"  {...field} />
+                    <Input placeholder="Nom de l'entrainement" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

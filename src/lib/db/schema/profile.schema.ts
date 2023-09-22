@@ -1,4 +1,4 @@
-import { foreign_id, id, integerSchema, table } from "./utils"
+import { id, integerSchema, table } from "./utils"
 import { z } from "zod"
 import { InferSelectModel } from "drizzle-orm"
 import { integer, timestamp, varchar } from "drizzle-orm/pg-core"

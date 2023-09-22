@@ -4,6 +4,7 @@ const server = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]),
   CLERK_SECRET_KEY: z.string().min(1),
   DRIZZLE_DATABASE_URL: z.string().min(1),
+  DRIZZLE_DATABASE_AUTH_TOKEN: z.string().min(1),
   DRIZZLE_LOGGING: z.boolean().default(false),
   NEXT_PUBLIC_CLERK_SIGN_IN_URL: z.string().min(1),
   NEXT_PUBLIC_CLERK_SIGN_UP_URL: z.string().min(1),
@@ -27,6 +28,7 @@ const processEnv = {
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   DRIZZLE_DATABASE_URL: process.env.DRIZZLE_DATABASE_URL,
+  DRIZZLE_DATABASE_AUTH_TOKEN: process.env.DRIZZLE_DATABASE_AUTH_TOKEN,
   DRIZZLE_LOGGING: process.env.DRIZZLE_LOGGING === "true" ?? false,
   NEXT_PUBLIC_CLERK_SIGN_IN_URL: process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL,
   NEXT_PUBLIC_CLERK_SIGN_UP_URL: process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL,

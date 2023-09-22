@@ -9,7 +9,7 @@ import { Form } from "~/components/ui/form"
 import {
   deleteTraining,
   editTraining,
-} from "~/lib/db/actions/trainings.actions"
+} from "~/lib/db/actions/trainings.actions.old"
 import {
   EditTrainingSchema,
   Exercice,

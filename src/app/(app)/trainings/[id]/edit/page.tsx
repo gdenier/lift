@@ -4,7 +4,7 @@ import {
   editTraining,
   deleteTraining,
   getTraining,
-} from "~/lib/db/actions/trainings.actions"
+} from "~/lib/db/actions/trainings.actions.old"
 import { EditTrainingSchema } from "~/lib/db/schema"
 import { z } from "zod"
 import { auth } from "@clerk/nextjs"
