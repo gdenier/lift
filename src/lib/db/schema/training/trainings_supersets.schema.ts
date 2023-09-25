@@ -46,7 +46,7 @@ export var trainingSupersetSchema = z.object({
   intervalRest: integerSchema(0),
   nbRound: integerSchema(),
   trainingStepId: z.string().ulid(),
-  exercices: z.array(trainingExerciceSchema).optional(),
+  exercices: z.array(trainingExerciceSchema).optional().nullable(),
 })
 
 export var editTrainingSupersetSchema = trainingSupersetSchema

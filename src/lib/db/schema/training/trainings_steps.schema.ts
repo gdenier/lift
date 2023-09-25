@@ -48,8 +48,8 @@ export var trainingStepSchema = z.object({
   id: z.string().ulid(),
   order: integerSchema(0),
   trainingId: z.string().ulid(),
-  exercice: trainingExerciceSchema.optional(),
-  superset: trainingSupersetSchema.optional(),
+  exercice: trainingExerciceSchema.optional().nullable(),
+  superset: trainingSupersetSchema.optional().nullable(),
 })
 
 export var editTrainingStepSchema = trainingStepSchema

@@ -11,7 +11,7 @@ export const trainings_series = table("trainings_exercices_series", {
   weight: real("weight"),
   repetition: integer("repetition"),
   time: integer("time"),
-  rest: integer("rest").notNull(),
+  rest: integer("rest"),
   order: integer("order").notNull(),
   trainingExerciceId: ulid("training_exercice_id")
     .references(() => trainings_exercices.id, { onDelete: "cascade" })
@@ -35,10 +35,10 @@ export type TrainingSerie = z.infer<typeof trainingSerieSchema>
 //---- Schemas
 export var trainingSerieSchema = z.object({
   id: z.string().ulid(),
-  weight: integerSchema(0).optional(),
-  repetition: integerSchema(0).optional(),
-  time: integerSchema(0).optional(),
-  rest: integerSchema(0),
+  weight: integerSchema(0).optional().nullable(),
+  repetition: integerSchema(0).optional().nullable(),
+  time: integerSchema(0).optional().nullable(),
+  rest: integerSchema(0).optional().nullable(),
   order: integerSchema(0),
   trainingExerciceId: z.string().ulid(),
 })

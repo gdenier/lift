@@ -58,10 +58,10 @@ export type TrainingExercice = z.infer<typeof trainingExerciceSchema>
 //---- Schemas
 export var trainingExerciceSchema = z.object({
   id: z.string().ulid(),
-  order: integerSchema(0).optional(),
-  exerciceId: z.string().ulid().optional(),
-  supersetId: z.string().ulid().optional(),
-  trainingStepId: z.string().ulid().optional(),
+  order: integerSchema(0).optional().nullable(),
+  exerciceId: z.string().ulid().optional().nullable(),
+  supersetId: z.string().ulid().optional().nullable(),
+  trainingStepId: z.string().ulid().optional().nullable(),
   exercice: exerciceSchema,
   series: z.array(trainingSerieSchema).optional(),
 })

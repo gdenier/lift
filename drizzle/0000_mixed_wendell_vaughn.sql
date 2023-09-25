@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS "lift_trainings_exercices_series" (
 	"weight" real,
 	"repetition" integer,
 	"time" integer,
-	"rest" integer NOT NULL,
+	"rest" integer,
 	"order" integer NOT NULL,
 	"training_exercice_id" "ulid" NOT NULL,
 	CONSTRAINT "lift_trainings_exercices_series_training_exercice_id_lift_trainings_exercices_id_fk" FOREIGN KEY ("training_exercice_id") REFERENCES "lift_trainings_exercices"("id") ON DELETE cascade ON UPDATE no action
