@@ -10,30 +10,19 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog"
 import { useState } from "react"
-import { UseFieldArrayAppend, useWatch } from "react-hook-form"
 import { Button } from "~/components/ui/button"
-import { EditTrainingSchema, Exercice } from "~/lib/db/schema"
+import { EditTraining, Exercice } from "~/lib/db/schema"
+import { useFieldArrayContext } from "~/components/FieldArrayContext"
+import { sortByOrder } from "~/lib/utils"
 
-export const AddSupersetDialog = ({
-  onConfirm,
-  exercices,
-}: {
-  onConfirm: UseFieldArrayAppend<EditTrainingSchema, "trainings_supersets">
-  exercices: Exercice[]
-}) => {
+export const AddSupersetDialog = ({ exercices }: { exercices: Exercice[] }) => {
   const [open, setOpen] = useState(false)
-  const trainings_supersets = useWatch<
-    EditTrainingSchema,
-    "trainings_supersets"
-  >({ name: "trainings_supersets" })
-  const trainings_exercices = useWatch<
-    EditTrainingSchema,
-    "trainings_exercices"
-  >({ name: "trainings_exercices" })
 
   const [selectedExercices, setSelectedExercices] = useState<
-    { id: string; order: number }[]
+    { exercice: Exercice; order: number }[]
   >([])
+
+  const stepsFieldArray = useFieldArrayContext<EditTraining, "steps">("steps")
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -55,17 +44,20 @@ export const AddSupersetDialog = ({
             >
               <div>
                 <p>
-                  {selectedExercices.find((sEx) => sEx.id === exercice.id)
-                    ?.order ?? "-"}
+                  {selectedExercices.find(
+                    (sEx) => sEx.exercice.id === exercice.id
+                  )?.order ?? "-"}
                 </p>
               </div>
               <p>{exercice.name}</p>
-              {selectedExercices.find((sEx) => sEx.id === exercice.id) ? (
+              {selectedExercices.find(
+                (sEx) => sEx.exercice.id === exercice.id
+              ) ? (
                 <Button
                   type="button"
                   onClick={() => {
                     setSelectedExercices((old) =>
-                      old.filter(({ id }) => id !== exercice.id)
+                      old.filter(({ exercice }) => exercice.id !== exercice.id)
                     )
                   }}
                 >
@@ -78,7 +70,7 @@ export const AddSupersetDialog = ({
                     setSelectedExercices((old) => [
                       ...old,
                       {
-                        id: exercice.id,
+                        exercice,
                         order: (old?.length ?? 0) + 1,
                       },
                     ])
@@ -94,18 +86,21 @@ export const AddSupersetDialog = ({
           <Button
             type="button"
             onClick={() => {
-              onConfirm({
-                exercices: selectedExercices.map((sEx) => ({
-                  order: sEx.order,
-                  exerciceId: sEx.id,
-                })),
-                order:
-                  (trainings_exercices?.length ?? 0) +
-                  (trainings_supersets?.length ?? 0) +
-                  1,
-                intervalRest: 0,
-                rest: 60, // use default rest time of account
-                rounds: [],
+              stepsFieldArray.append({
+                order: stepsFieldArray.fields.length,
+                superset: {
+                  intervalRest: 0,
+                  rest: 60,
+                  nbRound: 1,
+                  exercices: sortByOrder(selectedExercices).map(
+                    (selectedExercice, index) => ({
+                      order: index,
+                      exercice: selectedExercice.exercice,
+                      exerciceId: selectedExercice.exercice.id,
+                      series: [{ order: 0, repetition: 10 }],
+                    })
+                  ),
+                },
               })
               setSelectedExercices([])
               setOpen(false)

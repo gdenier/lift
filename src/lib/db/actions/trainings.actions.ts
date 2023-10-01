@@ -10,6 +10,7 @@ import {
   trainings,
 } from "../schema/training/trainings.schema"
 import {
+  EditTrainingSuperset,
   TrainingSuperset,
   trainings_supersets,
 } from "../schema/training/trainings_supersets.schema"
@@ -24,7 +25,7 @@ import {
 import { db } from ".."
 import { and, asc, eq, sql } from "drizzle-orm"
 import { redirect } from "next/navigation"
-import { TrainingStep, trainings_steps } from "../schema"
+import { EditTrainingStep, TrainingStep, trainings_steps } from "../schema"
 
 export const getTraining = withValidation(
   trainingSchema.pick({ id: true }),
@@ -105,6 +106,7 @@ export const editTraining = withValidation(
     await updateTraining(data)
 
     const savedSteps = await upsertSteps(data)
+    if (!savedSteps) return updateCache(data)
 
     data.steps = data.steps?.map<(typeof data.steps)[0]>((step) => ({
       ...step,
@@ -121,9 +123,11 @@ export const editTraining = withValidation(
           ...step,
           superset: {
             ...step.superset,
-            ...(savedSupersets.find(
-              (savedSuperset) => savedSuperset.trainingStepId === step.id
-            ) as (typeof savedSupersets)[0]),
+            ...(
+              savedSupersets?.find(
+                (savedSuperset) => savedSuperset.trainingStepId === step.id
+              ) as typeof savedSupersets
+            )?.[0],
           },
         }
 
@@ -131,6 +135,7 @@ export const editTraining = withValidation(
     })
 
     const savedExercices = await upsertExercice(data)
+    if (!savedExercices) return updateCache(data)
 
     data.steps = data.steps?.map<(typeof data.steps)[0]>((step) => {
       if (step.exercice)
@@ -159,9 +164,7 @@ export const editTraining = withValidation(
 
     await upsertSeries(data)
 
-    revalidatePath("/")
-    revalidatePath(`/trainings/${data.id}`)
-    revalidatePath(`/trainings/${data.id}/edit`)
+    updateCache(data)
   }
 )
 
@@ -175,73 +178,78 @@ const updateTraining = async (data: EditTraining) => {
 }
 
 const upsertSteps = async (data: EditTraining) => {
-  return await db
-    .insert(trainings_steps)
-    .values(
-      data.steps?.map<TrainingStep>((step) => ({
-        id: step.id as string,
-        order: step.order,
-        trainingId: data.id,
-      })) ?? []
-    )
-    .onConflictDoUpdate({
-      target: trainings_steps.id,
-      set: {
-        order: sql`excluded.order`,
-      },
-    })
-    .returning()
+  if (data.steps?.length)
+    return await db
+      .insert(trainings_steps)
+      .values(
+        data.steps?.map<TrainingStep>((step) => ({
+          id: step.id as string,
+          order: step.order,
+          trainingId: data.id,
+        })) ?? []
+      )
+      .onConflictDoUpdate({
+        target: trainings_steps.id,
+        set: {
+          order: sql`excluded.order`,
+        },
+      })
+      .returning()
 }
 
 const upsertSuperset = async (data: EditTraining) => {
-  return await db
-    .insert(trainings_supersets)
-    .values(
-      data.steps
-        ?.filter(
-          (step): step is TrainingStep & { superset: TrainingSuperset } =>
-            !!step.superset
-        )
-        .map<TrainingSuperset>(({ id, superset }) => ({
-          id: superset.id as string,
-          intervalRest: superset.intervalRest,
-          nbRound: superset.nbRound,
-          rest: superset.rest,
-          trainingStepId: id,
-        })) ?? []
-    )
-    .onConflictDoUpdate({
-      target: trainings_supersets.id,
-      set: {
-        intervalRest: sql`excluded.intervalRest`,
-        nbRound: sql`excluded.nbRound`,
-        rest: sql`excluded.rest`,
-      },
-    })
-    .returning()
+  if (data.steps?.filter((step) => !!step.superset)?.length)
+    return await db
+      .insert(trainings_supersets)
+      .values(
+        data.steps
+          ?.filter(
+            (
+              step
+            ): step is EditTrainingStep & { superset: EditTrainingSuperset } =>
+              !!step.superset
+          )
+          .map<EditTrainingSuperset>(({ id, superset }) => ({
+            id: superset.id as string,
+            intervalRest: superset.intervalRest,
+            nbRound: superset.nbRound,
+            rest: superset.rest,
+            trainingStepId: id,
+          })) ?? []
+      )
+      .onConflictDoUpdate({
+        target: trainings_supersets.id,
+        set: {
+          intervalRest: sql`excluded.intervalRest`,
+          nbRound: sql`excluded.nbRound`,
+          rest: sql`excluded.rest`,
+        },
+      })
+      .returning()
 }
 
 const upsertExercice = async (data: EditTraining) => {
-  return db
-    .insert(trainings_exercices)
-    .values([
-      ...(data.steps?.flatMap<Partial<TrainingExercice>>(
-        ({ id, exercice, superset }) => {
-          if (exercice) return { ...exercice, trainingStepId: id }
-          return (
-            superset?.exercices?.map((exercice) => ({
-              ...exercice,
-              supersetId: superset.id,
-            })) ?? []
-          )
-        }
-      ) ?? []),
-    ])
-    .onConflictDoUpdate({
-      target: trainings_exercices.id,
-      set: { order: sql`excluded.order` },
-    })
-    .returning()
+  const values = data.steps?.flatMap<Partial<TrainingExercice>>(
+    ({ id, exercice, superset }) => {
+      if (exercice) return { ...exercice, series: [], trainingStepId: id }
+      return (
+        superset?.exercices?.map((exercice) => ({
+          ...exercice,
+          series: [],
+          supersetId: superset.id,
+        })) ?? []
+      )
+    }
+  )
+  if (values?.length)
+    return db
+      .insert(trainings_exercices)
+      .values([...values] as any) // FIXME: typing any
+      .onConflictDoUpdate({
+        target: trainings_exercices.id,
+        set: { order: sql`excluded.order` },
+      })
+      .returning()
 }
 
 const upsertSeries = async (data: EditTraining) => {
@@ -279,4 +287,10 @@ const upsertSeries = async (data: EditTraining) => {
       },
     })
     .returning()
+}
+
+function updateCache(data: EditTraining) {
+  revalidatePath("/")
+  revalidatePath(`/trainings/${data.id}`)
+  revalidatePath(`/trainings/${data.id}/edit`)
 }

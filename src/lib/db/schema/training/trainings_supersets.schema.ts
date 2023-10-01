@@ -38,6 +38,7 @@ export const trainings_supersetsRelations = relations(
 
 //---- Types
 export type TrainingSuperset = z.infer<typeof trainingSupersetSchema>
+export type EditTrainingSuperset = z.infer<typeof editTrainingSupersetSchema>
 
 //---- Schemas
 export var trainingSupersetSchema = z.object({

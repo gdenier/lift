@@ -2,6 +2,7 @@ import { ulid, id, integerSchema, table } from "../utils"
 import { relations } from "drizzle-orm"
 import { exerciceSchema, exercices } from "../exercices.schema"
 import {
+  editTrainingSerieSchema,
   trainingSerieSchema,
   trainings_series,
 } from "./trainings_series.schema"
@@ -59,7 +60,7 @@ export type TrainingExercice = z.infer<typeof trainingExerciceSchema>
 export var trainingExerciceSchema = z.object({
   id: z.string().ulid(),
   order: integerSchema(0).optional().nullable(),
-  exerciceId: z.string().ulid().optional().nullable(),
+  exerciceId: z.string().ulid(),
   supersetId: z.string().ulid().optional().nullable(),
   trainingStepId: z.string().ulid().optional().nullable(),
   exercice: exerciceSchema,
@@ -67,8 +68,8 @@ export var trainingExerciceSchema = z.object({
 })
 
 export var editTrainingExerciceSchema = trainingExerciceSchema
-  .omit({ exercice: true, series: true })
+  .omit({ series: true })
   .partial({ id: true })
   .extend({
-    series: z.array(trainingSerieSchema).optional(),
+    series: z.array(editTrainingSerieSchema).optional(),
   })

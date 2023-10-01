@@ -1,22 +1,25 @@
+"use client"
+
 import { ReactElement } from "react"
 import { Button } from "./ui/button"
 import { RotateCw, SaveIcon } from "lucide-react"
+import { useFormContext } from "react-hook-form"
 
 export const SubmitButton = ({
-  isPending,
+  isLoading,
   text = true,
 }: {
-  isPending: boolean
+  isLoading: boolean
   text?: boolean
 }): ReactElement => {
   return (
     <Button
       type="submit"
       className="gap-2"
-      disabled={isPending}
+      disabled={isLoading}
       size={text ? "default" : "icon"}
     >
-      {isPending ? (
+      {isLoading ? (
         <RotateCw className="h-5 w-5 animate-spin" />
       ) : (
         <SaveIcon className="h-5 w-5" />

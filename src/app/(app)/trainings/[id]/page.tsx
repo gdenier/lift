@@ -15,7 +15,7 @@ export default async function TrainingPage({
 }) {
   const training = await getTraining({ id: params.id })
 
-  if (!training) notFound()
+  if (!training) return notFound()
 
   return (
     <div className="w-full">

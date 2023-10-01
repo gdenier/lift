@@ -42,6 +42,7 @@ export const trainings_stepsRelations = relations(
 
 //---- Types
 export type TrainingStep = z.infer<typeof trainingStepSchema>
+export type EditTrainingStep = z.infer<typeof editTrainingStepSchema>
 
 //---- Schemas
 export var trainingStepSchema = z.object({

@@ -10,24 +10,13 @@ import {
 import { useState } from "react"
 import { UseFieldArrayAppend, useWatch } from "react-hook-form"
 import { Button } from "~/components/ui/button"
-import { EditTrainingSchema, Exercice } from "~/lib/db/schema"
+import { EditTraining, Exercice } from "~/lib/db/schema"
+import { useFieldArrayContext } from "~/components/FieldArrayContext"
 
-export const AddExerciceDialog = ({
-  onConfirm,
-  exercices,
-}: {
-  onConfirm: UseFieldArrayAppend<EditTrainingSchema, "trainings_exercices">
-  exercices: Exercice[]
-}) => {
+export const AddExerciceDialog = ({ exercices }: { exercices: Exercice[] }) => {
   const [open, setOpen] = useState(false)
-  const trainings_exercices = useWatch<
-    EditTrainingSchema,
-    "trainings_exercices"
-  >({ name: "trainings_exercices" })
-  const trainings_supersets = useWatch<
-    EditTrainingSchema,
-    "trainings_supersets"
-  >({ name: "trainings_supersets" })
+
+  const stepsFieldArray = useFieldArrayContext<EditTraining, "steps">("steps")
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -51,12 +40,12 @@ export const AddExerciceDialog = ({
               <Button
                 type="button"
                 onClick={() => {
-                  onConfirm({
-                    exerciceId: exercice.id,
-                    order:
-                      (trainings_exercices?.length ?? 0) +
-                      (trainings_supersets?.length ?? 0) +
-                      1,
+                  stepsFieldArray.append({
+                    order: stepsFieldArray.fields.length,
+                    exercice: {
+                      exerciceId: exercice.id,
+                      exercice,
+                    },
                   })
                   setOpen(false)
                 }}
