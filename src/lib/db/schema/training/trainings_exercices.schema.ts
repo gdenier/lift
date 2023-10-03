@@ -1,15 +1,15 @@
-import { ulid, id, integerSchema, table } from "../utils"
+import { ulid, id, table } from "../utils"
 import { relations } from "drizzle-orm"
-import { exerciceSchema, exercices } from "../exercices.schema"
-import {
-  editTrainingSerieSchema,
-  trainingSerieSchema,
-  trainings_series,
-} from "./trainings_series.schema"
+import { exercices } from "../exercices.schema"
+import { trainings_series } from "./trainings_series.schema"
 import { trainings_steps } from "./trainings_steps.schema"
 import { trainings_supersets } from "./trainings_supersets.schema"
 import { integer } from "drizzle-orm/pg-core"
 import { z } from "zod"
+import {
+  trainingExerciceSchema,
+  editTrainingExerciceSchema,
+} from "../../validation/training.validator"
 
 //---- Entity
 export const trainings_exercices = table("trainings_exercices", {
@@ -55,21 +55,4 @@ export const trainings_exercicesRelations = relations(
 
 //---- Types
 export type TrainingExercice = z.infer<typeof trainingExerciceSchema>
-
-//---- Schemas
-export var trainingExerciceSchema = z.object({
-  id: z.string().ulid(),
-  order: integerSchema(0).optional().nullable(),
-  exerciceId: z.string().ulid(),
-  supersetId: z.string().ulid().optional().nullable(),
-  trainingStepId: z.string().ulid().optional().nullable(),
-  exercice: exerciceSchema,
-  series: z.array(trainingSerieSchema).optional(),
-})
-
-export var editTrainingExerciceSchema = trainingExerciceSchema
-  .omit({ series: true })
-  .partial({ id: true })
-  .extend({
-    series: z.array(editTrainingSerieSchema).optional(),
-  })
+export type EditTrainingExercice = z.infer<typeof editTrainingExerciceSchema>

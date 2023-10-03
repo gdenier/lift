@@ -3,6 +3,7 @@ import { relations } from "drizzle-orm"
 import { integer, real } from "drizzle-orm/pg-core"
 import { trainings_exercices } from "./trainings_exercices.schema"
 import { z } from "zod"
+import { trainingSerieSchema } from "../../validation/training.validator"
 
 //---- Entity
 export const trainings_series = table("trainings_exercices_series", {
@@ -31,19 +32,3 @@ export const trainings_seriesRelations = relations(
 
 //---- Types
 export type TrainingSerie = z.infer<typeof trainingSerieSchema>
-
-//---- Schemas
-export var trainingSerieSchema = z.object({
-  id: z.string().ulid(),
-  weight: integerSchema(0).optional().nullable(),
-  repetition: integerSchema(0).optional().nullable(),
-  time: integerSchema(0).optional().nullable(),
-  rest: integerSchema(0).optional().nullable(),
-  order: integerSchema(0),
-  trainingExerciceId: z.string().ulid(),
-})
-
-export var editTrainingSerieSchema = trainingSerieSchema.partial({
-  id: true,
-  trainingExerciceId: true,
-})

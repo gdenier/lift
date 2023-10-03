@@ -9,7 +9,6 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { EditTrainingSchema } from "~/lib/db/schema"
 import {
   Select,
   SelectContent,
@@ -17,26 +16,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select"
+import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
 
 export const RepOrTimeField = ({ name }: { name: string }) => {
-  const form = useFormContext<EditTrainingSchema>()
+  const form = useFormContext<EditTraining>()
+
+  console.log(form.getValues(`${name}.time` as any))
 
   const [selected, setSelected] = useState(
-    form.getValues(`${name}.time` as any) !== undefined ? "time" : "repetition"
+    form.getValues(`${name}.time` as any) === null ? "repetition" : "time"
   )
   const [open, setOpen] = useState(false)
 
   const onChange = (value: string) => {
     if (value === "repetition") {
-      form.setValue(`${name}.time` as any, undefined)
+      form.setValue(`${name}.time` as any, null)
     } else {
-      form.setValue(`${name}.repetition` as any, undefined)
+      form.setValue(`${name}.repetition` as any, null)
     }
     setSelected(value)
   }
 
   return (
-    <div className="flex w-[110px] min-w-[110px] max-w-[110px] flex-col">
+    <div className="flex  min-w-[110px]  flex-col">
       <Select
         defaultValue={selected}
         onValueChange={onChange}
@@ -64,11 +66,16 @@ export const RepOrTimeField = ({ name }: { name: string }) => {
           <FormField
             control={form.control}
             name={`${name}.repetition` as any}
-            render={({ field }) => (
+            render={({ field: { value, ...field } }) => (
               <FormItem>
                 <FormLabel className="sr-only">Répétition</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="10" {...field} />
+                  <Input
+                    type="number"
+                    placeholder="10"
+                    value={value ?? ""}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -80,11 +87,16 @@ export const RepOrTimeField = ({ name }: { name: string }) => {
           <FormField
             control={form.control}
             name={`${name}.time` as any}
-            render={({ field }) => (
+            render={({ field: { value, ...field } }) => (
               <FormItem>
                 <FormLabel className="sr-only">Temps d&apos;exercice</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="120" {...field} />
+                  <Input
+                    type="number"
+                    placeholder="120"
+                    value={value ?? ""}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

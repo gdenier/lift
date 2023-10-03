@@ -11,9 +11,10 @@ import {
 } from "~/components/ui/dialog"
 import { useState } from "react"
 import { Button } from "~/components/ui/button"
-import { EditTraining, Exercice } from "~/lib/db/schema"
 import { useFieldArrayContext } from "~/components/FieldArrayContext"
 import { sortByOrder } from "~/lib/utils"
+import { Exercice } from "~/lib/db/schema/exercices.schema"
+import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
 
 export const AddSupersetDialog = ({ exercices }: { exercices: Exercice[] }) => {
   const [open, setOpen] = useState(false)

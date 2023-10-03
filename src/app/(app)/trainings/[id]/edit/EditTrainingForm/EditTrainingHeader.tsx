@@ -4,7 +4,7 @@ import { ReactElement, useTransition } from "react"
 import { SubmitButton } from "~/components/SubmitButton"
 import { Button, buttonVariants } from "~/components/ui/button"
 import { deleteTraining } from "~/lib/db/actions/trainings.actions"
-import { EditTraining, Training } from "~/lib/db/schema"
+import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
 
 export const EditTrainingHeader = ({
   training,

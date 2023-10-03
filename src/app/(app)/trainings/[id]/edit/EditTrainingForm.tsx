@@ -10,12 +10,14 @@ import {
   deleteTraining,
   editTraining,
 } from "~/lib/db/actions/trainings.actions"
-import { EditTraining, Exercice, editTrainingSchema } from "~/lib/db/schema"
 import { MetadataFormPart } from "./EditTrainingForm/MetadataFormPart"
 import { ExercicesFormPart } from "./EditTrainingForm/ExercicesFormPart"
 import { buttonVariants } from "~/components/ui/button"
 import Link from "next/link"
 import { EditTrainingHeader } from "./EditTrainingForm/EditTrainingHeader"
+import { Exercice } from "~/lib/db/schema/exercices.schema"
+import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
+import { editTrainingSchema } from "~/lib/db/validation/training.validator"
 
 export const EditTrainingForm = ({
   onSubmit,
@@ -36,6 +38,7 @@ export const EditTrainingForm = ({
   const [isUpdatePending, startUpdateTransition] = useTransition()
 
   const handleSubmit = (values: EditTraining) => {
+    console.log(values)
     startUpdateTransition(async () => {
       await onSubmit(values)
       redirect(`/trainings/${values.id}`)
@@ -66,6 +69,7 @@ export const EditTrainingForm = ({
           <SubmitButton isLoading={isUpdatePending} />
         </div>
       </form>
+      {JSON.stringify(form.formState.errors, null, 2)}
     </Form>
   )
 }

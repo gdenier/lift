@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { EditTraining } from "~/lib/db/schema"
+import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
 
 export const MetadataFormPart = (): ReactElement => {
   const form = useFormContext<EditTraining>()

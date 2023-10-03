@@ -2,11 +2,11 @@ import { id, table } from "../utils"
 import { z } from "zod"
 import { relations } from "drizzle-orm"
 import { varchar } from "drizzle-orm/pg-core"
+import { trainings_steps } from "./trainings_steps.schema"
 import {
-  editTrainingStepSchema,
-  trainingStepSchema,
-  trainings_steps,
-} from "./trainings_steps.schema"
+  trainingSchema,
+  editTrainingSchema,
+} from "../../validation/training.validator"
 
 //---- Entity
 export const trainings = table("trainings", {
@@ -25,26 +25,3 @@ export const trainingsRelations = relations(trainings, ({ many }) => ({
 //---- Types
 export type Training = z.infer<typeof trainingSchema>
 export type EditTraining = z.infer<typeof editTrainingSchema>
-
-//---- Schemas
-export var trainingSchema = z.object({
-  id: z.string().ulid(),
-  title: z.string(),
-  userId: z.string(),
-  steps: z.array(trainingStepSchema).optional(),
-})
-
-export var createTrainingSchema = trainingSchema.omit({
-  id: true,
-  steps: true,
-  userId: true,
-})
-
-export var editTrainingSchema = trainingSchema
-  .omit({
-    userId: true,
-    steps: true,
-  })
-  .extend({
-    steps: z.array(editTrainingStepSchema).optional(),
-  })

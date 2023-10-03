@@ -1,9 +1,9 @@
 import { ReactElement } from "react"
 import { StepFormPartProps } from "../StepFormPart"
 import { useWatch } from "react-hook-form"
-import { EditTraining } from "~/lib/db/schema"
 import { ResponsiveDialog } from "~/components/ResponsiveDialog"
 import { ExerciceStepDialogContent } from "./ExerciceStepFormPart/ExerciceStepDialogContent"
+import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
 
 export const ExerciceStepFormPart = ({
   stepIndex,
@@ -26,7 +26,12 @@ export const ExerciceStepFormPart = ({
             <p>({exercice.series?.length ?? 0} séries)</p>
           </>
         }
-        panel={<ExerciceStepDialogContent stepIndex={stepIndex} />}
+        panel={
+          <ExerciceStepDialogContent
+            stepIndex={stepIndex}
+            name={`steps.${stepIndex}.exercice`}
+          />
+        }
       />
     </div>
   )

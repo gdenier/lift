@@ -1,31 +1,34 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { withValidation } from "~/lib/utils/server"
+import { log, withValidation } from "~/lib/utils/server"
+import { db } from ".."
+import { and, asc, eq, notInArray, sql } from "drizzle-orm"
+import { redirect } from "next/navigation"
 import {
-  EditTraining,
+  trainingSchema,
   createTrainingSchema,
   editTrainingSchema,
-  trainingSchema,
-  trainings,
-} from "../schema/training/trainings.schema"
+} from "../validation/training.validator"
+import { trainings, EditTraining } from "../schema/training/trainings.schema"
 import {
-  EditTrainingSuperset,
-  TrainingSuperset,
-  trainings_supersets,
-} from "../schema/training/trainings_supersets.schema"
+  trainings_exercices,
+  TrainingExercice,
+} from "../schema/training/trainings_exercices.schema"
 import {
-  TrainingSerie,
   trainings_series,
+  TrainingSerie,
 } from "../schema/training/trainings_series.schema"
 import {
-  TrainingExercice,
-  trainings_exercices,
-} from "../schema/training/trainings_exercices.schema"
-import { db } from ".."
-import { and, asc, eq, sql } from "drizzle-orm"
-import { redirect } from "next/navigation"
-import { EditTrainingStep, TrainingStep, trainings_steps } from "../schema"
+  trainings_steps,
+  TrainingStep,
+  EditTrainingStep,
+} from "../schema/training/trainings_steps.schema"
+import {
+  TrainingSuperset,
+  trainings_supersets,
+  EditTrainingSuperset,
+} from "../schema/training/trainings_supersets.schema"
 
 export const getTraining = withValidation(
   trainingSchema.pick({ id: true }),
@@ -103,11 +106,12 @@ export const deleteTraining = withValidation(
 export const editTraining = withValidation(
   editTrainingSchema,
   async (data, user) => {
+    const snapshot = await getTraining({ id: data.id })
     await updateTraining(data)
+    log(data)
 
     const savedSteps = await upsertSteps(data)
     if (!savedSteps) return updateCache(data)
-
     data.steps = data.steps?.map<(typeof data.steps)[0]>((step) => ({
       ...step,
       ...(savedSteps.find(
@@ -115,6 +119,7 @@ export const editTraining = withValidation(
       ) as (typeof savedSteps)[0]),
     }))
 
+    log(data)
     const savedSupersets = await upsertSuperset(data)
 
     data.steps = data.steps?.map<(typeof data.steps)[0]>((step) => {
@@ -123,17 +128,16 @@ export const editTraining = withValidation(
           ...step,
           superset: {
             ...step.superset,
-            ...(
-              savedSupersets?.find(
-                (savedSuperset) => savedSuperset.trainingStepId === step.id
-              ) as typeof savedSupersets
-            )?.[0],
+            ...(savedSupersets?.find(
+              (savedSuperset) => savedSuperset.trainingStepId === step.id
+            ) as typeof savedSupersets),
           },
         }
 
       return step
     })
 
+    log(data)
     const savedExercices = await upsertExercice(data)
     if (!savedExercices) return updateCache(data)
 
@@ -155,7 +159,9 @@ export const editTraining = withValidation(
           exercices: step.superset?.exercices?.map((exercice) => ({
             ...exercice,
             id: savedExercices.find(
-              (savedExercice) => savedExercice.supersetId === step.superset?.id
+              (savedExercice) =>
+                savedExercice.supersetId === step.superset?.id &&
+                savedExercice.order === exercice.order
             )?.id,
           })),
         },
@@ -178,6 +184,15 @@ const updateTraining = async (data: EditTraining) => {
 }
 
 const upsertSteps = async (data: EditTraining) => {
+  await db
+    .delete(trainings_steps)
+    .where(
+      notInArray(
+        trainings_steps.id,
+        (data.steps?.filter((step) => !!step.id)?.map((step) => step.id) ??
+          []) as string[]
+      )
+    )
   if (data.steps?.length)
     return await db
       .insert(trainings_steps)
@@ -198,6 +213,14 @@ const upsertSteps = async (data: EditTraining) => {
 }
 
 const upsertSuperset = async (data: EditTraining) => {
+  const toDeleteIds = (data.steps
+    ?.filter((step) => !!step.superset && !!step.superset.id)
+    ?.map((step) => step.superset?.id) ?? []) as string[]
+  if (toDeleteIds.length)
+    await db
+      .delete(trainings_supersets)
+      .where(notInArray(trainings_supersets.id, toDeleteIds))
+
   if (data.steps?.filter((step) => !!step.superset)?.length)
     return await db
       .insert(trainings_supersets)
@@ -220,8 +243,8 @@ const upsertSuperset = async (data: EditTraining) => {
       .onConflictDoUpdate({
         target: trainings_supersets.id,
         set: {
-          intervalRest: sql`excluded.intervalRest`,
-          nbRound: sql`excluded.nbRound`,
+          intervalRest: sql`excluded.interval_rest`,
+          nbRound: sql`excluded.nb_round`,
           rest: sql`excluded.rest`,
         },
       })
@@ -241,10 +264,19 @@ const upsertExercice = async (data: EditTraining) => {
       )
     }
   )
+
+  const toDeleteIds = (values
+    ?.filter((exercice) => !!exercice.id)
+    ?.map((exercice) => exercice.id) ?? []) as string[]
+  if (toDeleteIds.length)
+    await db
+      .delete(trainings_exercices)
+      .where(notInArray(trainings_exercices.id, toDeleteIds))
+
   if (values?.length)
     return db
       .insert(trainings_exercices)
-      .values([...values] as any) // FIXME: typing any
+      .values(values as any) // FIXME: typing any
       .onConflictDoUpdate({
         target: trainings_exercices.id,
         set: { order: sql`excluded.order` },
@@ -253,29 +285,43 @@ const upsertExercice = async (data: EditTraining) => {
 }
 
 const upsertSeries = async (data: EditTraining) => {
-  return await db
-    .insert(trainings_series)
-    .values(
-      data.steps?.flatMap<TrainingSerie>((step) => {
-        if (step.exercice)
+  log(data)
+  const values =
+    data.steps?.flatMap<TrainingSerie>((step) => {
+      if (step.exercice)
+        return (
+          step.exercice.series?.map((serie) => ({
+            ...(serie as TrainingSerie),
+            trainingExerciceId: step.exercice!.id!,
+          })) ?? []
+        )
+
+      return (
+        step.superset?.exercices?.flatMap((exercice) => {
+          log(exercice.id)
           return (
-            step.exercice.series?.map((serie) => ({
+            exercice.series?.map((serie) => ({
               ...(serie as TrainingSerie),
-              trainingExerciceId: step.exercice!.id!,
+              trainingExerciceId: exercice.id!,
             })) ?? []
           )
+        }) ?? []
+      )
+    }) ?? []
 
-        return (
-          step.superset?.exercices?.flatMap(
-            (exercice) =>
-              exercice.series?.map((serie) => ({
-                ...(serie as TrainingSerie),
-                trainingExerciceId: exercice.id!,
-              })) ?? []
-          ) ?? []
-        )
-      }) ?? []
-    )
+  log(values)
+
+  const toDeleteIds = (values
+    ?.filter((serie) => !!serie.id)
+    ?.map((serie) => serie.id) ?? []) as string[]
+  if (toDeleteIds.length)
+    await db
+      .delete(trainings_series)
+      .where(notInArray(trainings_series.id, toDeleteIds))
+
+  return await db
+    .insert(trainings_series)
+    .values(values)
     .onConflictDoUpdate({
       target: trainings_series.id,
       set: {

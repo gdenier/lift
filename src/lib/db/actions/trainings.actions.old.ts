@@ -5,13 +5,15 @@ import { withValidation } from "~/lib/utils/server"
 import {
   EditTrainingSchema,
   TrainingExercice,
-  createTrainingSchema,
-  editTrainingSchema,
   trainings,
   trainings_supersets_exercices,
   trainings_supersets_rounds,
   trainings_supersets_series,
 } from "../schema/training/trainings.schema"
+import {
+  createTrainingSchema,
+  editTrainingSchema,
+} from "../validation/training.validator.ts"
 import { trainings_supersets } from "../schema/training/trainings_supersets.schema"
 import { trainings_series } from "../schema/training/trainings_series.schema"
 import { trainings_exercices } from "../schema/training/trainings_exercices.schema"

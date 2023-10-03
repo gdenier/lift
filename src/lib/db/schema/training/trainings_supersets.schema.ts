@@ -1,13 +1,13 @@
-import { id, integerSchema, table, ulid } from "../utils"
+import { id, table, ulid } from "../utils"
 import { relations } from "drizzle-orm"
 import { integer } from "drizzle-orm/pg-core"
 import { trainings_steps } from "./trainings_steps.schema"
-import {
-  editTrainingExerciceSchema,
-  trainingExerciceSchema,
-  trainings_exercices,
-} from "./trainings_exercices.schema"
+import { trainings_exercices } from "./trainings_exercices.schema"
 import { z } from "zod"
+import {
+  trainingSupersetSchema,
+  editTrainingSupersetSchema,
+} from "../../validation/training.validator"
 
 //---- Entity
 export const trainings_supersets = table("trainings_supersets", {
@@ -39,20 +39,3 @@ export const trainings_supersetsRelations = relations(
 //---- Types
 export type TrainingSuperset = z.infer<typeof trainingSupersetSchema>
 export type EditTrainingSuperset = z.infer<typeof editTrainingSupersetSchema>
-
-//---- Schemas
-export var trainingSupersetSchema = z.object({
-  id: z.string().ulid(),
-  rest: integerSchema(0),
-  intervalRest: integerSchema(0),
-  nbRound: integerSchema(),
-  trainingStepId: z.string().ulid(),
-  exercices: z.array(trainingExerciceSchema).optional().nullable(),
-})
-
-export var editTrainingSupersetSchema = trainingSupersetSchema
-  .omit({ exercices: true })
-  .partial({ id: true, trainingStepId: true })
-  .extend({
-    exercices: z.array(editTrainingExerciceSchema).optional(),
-  })

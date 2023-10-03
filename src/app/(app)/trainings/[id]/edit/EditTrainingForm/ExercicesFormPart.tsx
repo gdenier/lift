@@ -27,7 +27,7 @@ export const ExercicesFormPart = ({
           </div>
         </CardHeader>
         <CardContent>
-          <ul>
+          <ul className="flex w-full flex-col gap-8">
             {stepFieldArray.fields.map((step, index) => (
               <StepFormPart key={step.id} stepIndex={index} />
             ))}

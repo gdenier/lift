@@ -1,7 +1,6 @@
 import { ReactElement, useCallback } from "react"
 import { StepFormPartProps } from "../../StepFormPart"
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form"
-import { EditTraining } from "~/lib/db/schema"
 import {
   SheetClose,
   SheetDescription,
@@ -9,7 +8,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet"
-import { index } from "drizzle-orm/mysql-core"
 import { Trash } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { useFieldArrayContext } from "~/components/FieldArrayContext"
@@ -22,24 +20,30 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
+import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
 
 export const ExerciceStepDialogContent = ({
   stepIndex,
-}: StepFormPartProps): ReactElement | null => {
+  name,
+  mode = "exercice",
+}: StepFormPartProps & {
+  name:
+    | `steps.${number}.exercice`
+    | `steps.${number}.superset.exercices.${number}`
+  mode?: "exercice" | "superset"
+}): ReactElement | null => {
   const form = useFormContext<EditTraining>()
-  const exercice = useWatch<EditTraining, `steps.${number}.exercice`>({
-    name: `steps.${stepIndex}.exercice`,
+  const exercice = useWatch<EditTraining, typeof name>({
+    name: name,
   })
   const stepFieldArray = useFieldArrayContext("steps")
-  const seriesFieldArray = useFieldArray<
-    EditTraining,
-    `steps.${number}.exercice.series`
-  >({ name: `steps.${stepIndex}.exercice.series` })
+  const seriesFieldArray = useFieldArray<EditTraining, `${typeof name}.series`>(
+    { name: `${name}.series` }
+  )
 
   const addSerie = () => {
-    console.log(seriesFieldArray.fields)
-    const lastSerie = form.getValues(
-      `steps.${stepIndex}.exercice.series.${seriesFieldArray.fields.length - 1}`
+    const { id, ...lastSerie } = form.getValues(
+      `${name}.series.${seriesFieldArray.fields.length - 1}`
     )
     seriesFieldArray.append({
       // copy the last one or default values
@@ -69,12 +73,10 @@ export const ExerciceStepDialogContent = ({
             key={field.id}
             className="flex w-full items-end justify-between gap-1"
           >
-            <RepOrTimeField
-              name={`steps.${stepIndex}.exercice.series.${serieIndex}`}
-            />
+            <RepOrTimeField name={`${name}.series.${serieIndex}`} />
             <FormField
               control={form.control}
-              name={`steps.${stepIndex}.exercice.series.${serieIndex}.weight`}
+              name={`${name}.series.${serieIndex}.weight`}
               render={({ field: { value, ...field } }) => (
                 // TODO: Custom Weight input
                 <FormItem>
@@ -92,43 +94,49 @@ export const ExerciceStepDialogContent = ({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name={`steps.${stepIndex}.exercice.series.${serieIndex}.rest`}
-              render={({ field: { value, ...field } }) => (
-                <FormItem>
-                  <FormLabel>Repos (seconde)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="120"
-                      value={value ?? ""}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              onClick={() => seriesFieldArray.remove(serieIndex)}
-              className="shrink-0"
-            >
-              <Trash />
-            </Button>
+            {mode === "exercice" ? (
+              <FormField
+                control={form.control}
+                name={`${name}.series.${serieIndex}.rest`}
+                render={({ field: { value, ...field } }) => (
+                  <FormItem>
+                    <FormLabel>Repos (seconde)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="120"
+                        value={value ?? ""}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
+            {mode === "exercice" ? (
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                onClick={() => seriesFieldArray.remove(serieIndex)}
+                className="shrink-0"
+              >
+                <Trash />
+              </Button>
+            ) : null}
           </li>
         ))}
-        <Button
-          variant="outline"
-          type="button"
-          className="mt-4 w-full"
-          onClick={addSerie}
-        >
-          Ajouter une série
-        </Button>
+        {mode === "exercice" ? (
+          <Button
+            variant="outline"
+            type="button"
+            className="mt-4 w-full"
+            onClick={addSerie}
+          >
+            Ajouter une série
+          </Button>
+        ) : null}
       </div>
       <SheetFooter>
         <SheetClose asChild>
