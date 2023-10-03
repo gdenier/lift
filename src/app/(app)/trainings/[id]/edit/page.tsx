@@ -6,7 +6,7 @@ import {
   getTraining,
 } from "~/lib/db/actions/trainings.actions"
 import { notFound } from "next/navigation"
-import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
+import { EditTraining } from "~/lib/db/schema"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -28,7 +28,6 @@ export default async function EditTrainingPage({
         defaultValues={training as EditTraining}
         onSubmit={editTraining}
         exercices={exercices}
-        deletion={deleteTraining}
       />
     </>
   )

@@ -44,7 +44,13 @@ export const SupersetStepFormPart = ({
       </div>
       <ul className="flex flex-col gap-2 pl-12">
         {exercicesFieldArray.fields.map((field, exerciceIndex) => (
-          <li key={field.id}>
+          <li
+            key={`step-exercices-item-${exerciceIndex}`}
+            className="flex w-full gap-2"
+          >
+            <p className="row-span-2 flex aspect-square h-6 w-6 shrink-0 items-center justify-center place-self-center rounded bg-secondary text-secondary-foreground">
+              {exerciceIndex + 1}
+            </p>
             <ResponsiveDialog
               label={field.exercice.name}
               panel={

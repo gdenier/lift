@@ -23,10 +23,8 @@ export const EditTrainingForm = ({
   onSubmit,
   defaultValues,
   exercices,
-  deletion,
 }: {
   onSubmit: typeof editTraining
-  deletion: typeof deleteTraining
   defaultValues: EditTraining
   exercices: Exercice[]
 }): ReactElement => {
@@ -38,7 +36,6 @@ export const EditTrainingForm = ({
   const [isUpdatePending, startUpdateTransition] = useTransition()
 
   const handleSubmit = (values: EditTraining) => {
-    console.log(values)
     startUpdateTransition(async () => {
       await onSubmit(values)
       redirect(`/trainings/${values.id}`)
