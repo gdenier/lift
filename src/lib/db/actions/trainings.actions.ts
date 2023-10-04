@@ -106,20 +106,22 @@ export const deleteTraining = withValidation(
 export const editTraining = withValidation(
   editTrainingSchema,
   async (data, user) => {
-    const snapshot = await getTraining({ id: data.id })
     await updateTraining(data)
-    log(data)
+
+    data.steps = data.steps?.map<(typeof data.steps)[0]>((step, index) => ({
+      ...step,
+      order: index,
+    }))
 
     const savedSteps = await upsertSteps(data)
     if (!savedSteps) return updateCache(data)
-    data.steps = data.steps?.map<(typeof data.steps)[0]>((step) => ({
+    data.steps = data.steps?.map<(typeof data.steps)[0]>((step, index) => ({
       ...step,
       ...(savedSteps.find(
         (savedStep) => savedStep.order === step.order
       ) as (typeof savedSteps)[0]),
     }))
 
-    log(data)
     const savedSupersets = await upsertSuperset(data)
 
     data.steps = data.steps?.map<(typeof data.steps)[0]>((step) => {
@@ -131,13 +133,16 @@ export const editTraining = withValidation(
             ...(savedSupersets?.find(
               (savedSuperset) => savedSuperset.trainingStepId === step.id
             ) as typeof savedSupersets),
+            exercices: step.superset.exercices?.map((ex, index) => ({
+              ...ex,
+              order: index,
+            })),
           },
         }
 
       return step
     })
 
-    log(data)
     const savedExercices = await upsertExercice(data)
     if (!savedExercices) return updateCache(data)
 
@@ -285,7 +290,6 @@ const upsertExercice = async (data: EditTraining) => {
 }
 
 const upsertSeries = async (data: EditTraining) => {
-  log(data)
   const values =
     data.steps?.flatMap<TrainingSerie>((step) => {
       if (step.exercice)
@@ -298,7 +302,6 @@ const upsertSeries = async (data: EditTraining) => {
 
       return (
         step.superset?.exercices?.flatMap((exercice) => {
-          log(exercice.id)
           return (
             exercice.series?.map((serie) => ({
               ...(serie as TrainingSerie),
@@ -308,8 +311,6 @@ const upsertSeries = async (data: EditTraining) => {
         }) ?? []
       )
     }) ?? []
-
-  log(values)
 
   const toDeleteIds = (values
     ?.filter((serie) => !!serie.id)

@@ -4,10 +4,12 @@ import { useWatch } from "react-hook-form"
 import { ResponsiveDialog } from "~/components/ResponsiveDialog"
 import { ExerciceStepDialogContent } from "./ExerciceStepFormPart/ExerciceStepDialogContent"
 import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
+import { UseSortableReturn } from "~/lib/dnd"
 
 export const ExerciceStepFormPart = ({
   stepIndex,
-}: StepFormPartProps): ReactElement | null => {
+  ...sortableProps
+}: StepFormPartProps & Partial<UseSortableReturn>): ReactElement | null => {
   const exercice = useWatch<EditTraining, `steps.${number}.exercice`>({
     name: `steps.${stepIndex}.exercice`,
   })
@@ -15,8 +17,12 @@ export const ExerciceStepFormPart = ({
   if (!exercice) return null
 
   return (
-    <div className="flex w-full gap-2">
-      <p className=" row-span-2 flex aspect-square h-10 w-10 shrink-0 items-center justify-center place-self-center rounded bg-primary text-primary-foreground">
+    <div className="flex h-fit w-full gap-2">
+      <p
+        className="row-span-2 flex aspect-square h-10 w-10 shrink-0 touch-none select-none items-center justify-center place-self-center rounded bg-primary text-primary-foreground"
+        {...sortableProps.attributes}
+        {...sortableProps.listeners}
+      >
         {stepIndex + 1}
       </p>
       <ResponsiveDialog
