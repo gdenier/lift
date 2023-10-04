@@ -20,8 +20,6 @@ export default async function EditTrainingPage({
 
   const exercices = await db.query.exercices.findMany()
 
-  if (!training) return notFound()
-
   return (
     <>
       <EditTrainingForm

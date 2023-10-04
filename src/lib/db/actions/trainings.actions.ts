@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { log, withValidation } from "~/lib/utils/server"
 import { db } from ".."
 import { and, asc, eq, notInArray, sql } from "drizzle-orm"
-import { redirect } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import {
   trainingSchema,
   createTrainingSchema,
@@ -65,7 +65,7 @@ export const getTraining = withValidation(
       where: (trainings, { eq, and }) =>
         and(eq(trainings.id, id), eq(trainings.userId, user.id)),
     })
-    if (!training) throw new Error("Can't get the requested training.")
+    if (!training) return notFound()
     return training
   }
 )

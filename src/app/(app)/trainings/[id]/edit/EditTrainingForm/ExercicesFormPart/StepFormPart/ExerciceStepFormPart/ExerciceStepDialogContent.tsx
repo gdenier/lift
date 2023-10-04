@@ -11,7 +11,7 @@ import {
 import { Trash } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { useFieldArrayContext } from "~/components/FieldArrayContext"
-import { RepOrTimeField } from "../../../../RepOrTimeField"
+import { RepOrTimeField } from "../../../RepOrTimeField"
 import {
   FormControl,
   FormField,
