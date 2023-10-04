@@ -10,10 +10,12 @@ import {
   SortableItem,
   UseSortableReturn,
 } from "~/lib/dnd"
+import { AddSupersetExerciceDialog } from "./SupersetStepFormpart/AddSupersetExerciceDialog"
 
 export const SupersetStepFormPart = ({
   stepIndex,
   withSubElement = true,
+  exercices,
   ...sortableProps
 }: StepFormPartProps & Partial<UseSortableReturn>): ReactElement | null => {
   const superset = useWatch<EditTraining, `steps.${number}.superset`>({
@@ -51,6 +53,10 @@ export const SupersetStepFormPart = ({
           panel={
             <SupersetStepDialogContent stepIndex={stepIndex} title={title} />
           }
+        />
+        <AddSupersetExerciceDialog
+          exercices={exercices}
+          fieldArray={exercicesFieldArray}
         />
       </div>
       {withSubElement ? (

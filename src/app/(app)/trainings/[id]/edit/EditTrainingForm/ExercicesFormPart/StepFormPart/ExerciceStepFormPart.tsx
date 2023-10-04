@@ -9,7 +9,8 @@ import { UseSortableReturn } from "~/lib/dnd"
 export const ExerciceStepFormPart = ({
   stepIndex,
   ...sortableProps
-}: StepFormPartProps & Partial<UseSortableReturn>): ReactElement | null => {
+}: Omit<StepFormPartProps, "exercices"> &
+  Partial<UseSortableReturn>): ReactElement | null => {
   const exercice = useWatch<EditTraining, `steps.${number}.exercice`>({
     name: `steps.${stepIndex}.exercice`,
   })

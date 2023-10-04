@@ -24,7 +24,9 @@ import { EditTraining } from "~/lib/db/schema"
 export const SupersetStepDialogContent = ({
   stepIndex,
   title,
-}: StepFormPartProps & { title: string }): ReactElement | null => {
+}: Omit<StepFormPartProps, "exercices"> & {
+  title: string
+}): ReactElement | null => {
   const stepFieldArray = useFieldArrayContext("steps")
   const form = useFormContext<EditTraining>()
 

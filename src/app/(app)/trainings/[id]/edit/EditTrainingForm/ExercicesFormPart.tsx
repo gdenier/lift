@@ -35,8 +35,6 @@ export const ExercicesFormPart = ({
 }): ReactElement => {
   const stepFieldArray = useFieldArray<EditTraining, "steps">({ name: "steps" })
 
-  const sensors = useSortableDragSensor()
-
   return (
     <FieldArrayContextProvider fields={{ steps: stepFieldArray }}>
       <Card>
@@ -59,6 +57,7 @@ export const ExercicesFormPart = ({
                     {(props, ref) => (
                       <StepFormPart
                         stepIndex={index}
+                        exercices={exercices}
                         ref={ref as any}
                         {...props}
                       />

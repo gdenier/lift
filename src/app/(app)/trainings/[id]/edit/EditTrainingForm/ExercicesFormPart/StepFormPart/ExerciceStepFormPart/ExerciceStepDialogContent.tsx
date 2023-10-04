@@ -26,7 +26,7 @@ export const ExerciceStepDialogContent = ({
   stepIndex,
   name,
   mode = "exercice",
-}: StepFormPartProps & {
+}: Omit<StepFormPartProps, "exercices"> & {
   name:
     | `steps.${number}.exercice`
     | `steps.${number}.superset.exercices.${number}`
