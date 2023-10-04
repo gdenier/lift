@@ -1,11 +1,15 @@
-import { ReactElement, useMemo } from "react"
+import { Fragment, ReactElement, useMemo } from "react"
 import { StepFormPartProps } from "../StepFormPart"
 import { useFieldArray, useWatch } from "react-hook-form"
 import { ResponsiveDialog } from "~/components/ResponsiveDialog"
 import { SupersetStepDialogContent } from "./SupersetStepFormpart/SupersetStepDialogContent"
 import { ExerciceStepDialogContent } from "./ExerciceStepFormPart/ExerciceStepDialogContent"
 import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
-import { UseSortableReturn } from "~/lib/dnd"
+import {
+  DndListSortableContext,
+  SortableItem,
+  UseSortableReturn,
+} from "~/lib/dnd"
 
 export const SupersetStepFormPart = ({
   stepIndex,
@@ -51,26 +55,42 @@ export const SupersetStepFormPart = ({
       </div>
       {withSubElement ? (
         <ul className="flex flex-col gap-2 pl-12">
-          {exercicesFieldArray.fields.map((field, exerciceIndex) => (
-            <li
-              key={`step-exercices-item-${exerciceIndex}`}
-              className="flex w-full gap-2"
-            >
-              <p className="row-span-2 flex aspect-square h-6 w-6 shrink-0 items-center justify-center place-self-center rounded bg-secondary text-secondary-foreground">
-                {exerciceIndex + 1}
-              </p>
-              <ResponsiveDialog
-                label={field.exercice.name}
-                panel={
-                  <ExerciceStepDialogContent
-                    stepIndex={stepIndex}
-                    name={`steps.${stepIndex}.superset.exercices.${exerciceIndex}`}
-                    mode="superset"
-                  />
-                }
-              />
-            </li>
-          ))}
+          <DndListSortableContext
+            items={exercicesFieldArray.fields}
+            move={exercicesFieldArray.move}
+          >
+            {exercicesFieldArray.fields.map((field, exerciceIndex) => (
+              <Fragment key={field.id}>
+                <SortableItem id={field.id}>
+                  {({ style, ...sortableProps }, ref) => (
+                    <li
+                      className="flex w-full gap-2"
+                      ref={ref as any}
+                      style={style}
+                    >
+                      <p
+                        className="row-span-2 flex aspect-square h-6 w-6 shrink-0 touch-none select-none items-center justify-center place-self-center rounded bg-secondary text-secondary-foreground"
+                        {...sortableProps.attributes}
+                        {...sortableProps.listeners}
+                      >
+                        {exerciceIndex + 1}
+                      </p>
+                      <ResponsiveDialog
+                        label={field.exercice.name}
+                        panel={
+                          <ExerciceStepDialogContent
+                            stepIndex={stepIndex}
+                            name={`steps.${stepIndex}.superset.exercices.${exerciceIndex}`}
+                            mode="superset"
+                          />
+                        }
+                      />
+                    </li>
+                  )}
+                </SortableItem>
+              </Fragment>
+            ))}
+          </DndListSortableContext>
         </ul>
       ) : null}
     </div>

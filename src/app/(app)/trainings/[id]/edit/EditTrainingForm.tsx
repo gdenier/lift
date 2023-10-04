@@ -66,7 +66,6 @@ export const EditTrainingForm = ({
           <SubmitButton isLoading={isUpdatePending} />
         </div>
       </form>
-      {JSON.stringify(form.formState.errors, null, 2)}
     </Form>
   )
 }

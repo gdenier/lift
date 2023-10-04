@@ -25,7 +25,8 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
-import { SortableItem } from "~/lib/dnd"
+import { DndListSortableContext, SortableItem } from "~/lib/dnd"
+import { useSortableDragSensor } from "~/lib/dnd/hooks/useDragSensor"
 
 export const ExercicesFormPart = ({
   exercices,
@@ -34,18 +35,7 @@ export const ExercicesFormPart = ({
 }): ReactElement => {
   const stepFieldArray = useFieldArray<EditTraining, "steps">({ name: "steps" })
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 200,
-        tolerance: 6,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
+  const sensors = useSortableDragSensor()
 
   return (
     <FieldArrayContextProvider fields={{ steps: stepFieldArray }}>
@@ -59,40 +49,24 @@ export const ExercicesFormPart = ({
         </CardHeader>
         <CardContent>
           <ul className="flex w-full flex-col gap-8">
-            <DndContext
-              sensors={sensors}
-              modifiers={[restrictToVerticalAxis]}
-              collisionDetection={closestCenter}
-              onDragEnd={(event) => {
-                const { active, over } = event
-                if (over && active.id !== over?.id) {
-                  const activeIndex = active.data.current?.sortable?.index
-                  const overIndex = over.data.current?.sortable?.index
-                  if (activeIndex !== undefined && overIndex !== undefined) {
-                    stepFieldArray.move(activeIndex, overIndex)
-                  }
-                }
-              }}
+            <DndListSortableContext
+              items={stepFieldArray.fields}
+              move={stepFieldArray.move}
             >
-              <SortableContext
-                items={stepFieldArray.fields}
-                strategy={verticalListSortingStrategy}
-              >
-                {stepFieldArray.fields.map((step, index) => (
-                  <Fragment key={step.id}>
-                    <SortableItem id={step.id}>
-                      {(props, ref) => (
-                        <StepFormPart
-                          stepIndex={index}
-                          ref={ref as any}
-                          {...props}
-                        />
-                      )}
-                    </SortableItem>
-                  </Fragment>
-                ))}
-              </SortableContext>
-            </DndContext>
+              {stepFieldArray.fields.map((step, index) => (
+                <Fragment key={step.id}>
+                  <SortableItem id={step.id}>
+                    {(props, ref) => (
+                      <StepFormPart
+                        stepIndex={index}
+                        ref={ref as any}
+                        {...props}
+                      />
+                    )}
+                  </SortableItem>
+                </Fragment>
+              ))}
+            </DndListSortableContext>
           </ul>
         </CardContent>
       </Card>
