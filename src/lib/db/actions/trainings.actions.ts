@@ -1,45 +1,74 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { withValidation } from "~/lib/utils/server"
+import { log, withValidation } from "~/lib/utils/server"
+import { db } from ".."
+import { and, asc, eq, notInArray, sql } from "drizzle-orm"
+import { notFound, redirect } from "next/navigation"
 import {
-  EditTrainingSchema,
-  TrainingExercice,
+  trainingSchema,
   createTrainingSchema,
   editTrainingSchema,
-  trainings,
+} from "../validation/training.validator"
+import { trainings, EditTraining } from "../schema/training/trainings.schema"
+import {
   trainings_exercices,
+  TrainingExercice,
+} from "../schema/training/trainings_exercices.schema"
+import {
   trainings_series,
+  TrainingSerie,
+} from "../schema/training/trainings_series.schema"
+import {
+  trainings_steps,
+  TrainingStep,
+  EditTrainingStep,
+} from "../schema/training/trainings_steps.schema"
+import {
+  TrainingSuperset,
   trainings_supersets,
-  trainings_supersets_exercices,
-  trainings_supersets_rounds,
-  trainings_supersets_series,
-} from "../schema/trainings.schema"
-import { db } from ".."
-import { InferModel, eq, inArray, sql } from "drizzle-orm"
-import { z } from "zod"
-import { redirect } from "next/navigation"
+  EditTrainingSuperset,
+} from "../schema/training/trainings_supersets.schema"
 
-export async function getTraining(id: string, userId: string) {
-  const training = await db.query.trainings.findFirst({
-    with: {
-      trainings_exercices: {
-        with: { exercice: true, series: true },
-      },
-      trainings_supersets: {
-        with: {
-          exercices: { with: { exercice: true } },
-          rounds: { with: { series: true } },
+export const getTraining = withValidation(
+  trainingSchema.pick({ id: true }),
+  async ({ id }, user) => {
+    const training = await db.query.trainings.findFirst({
+      with: {
+        steps: {
+          with: {
+            exercice: {
+              with: {
+                exercice: true,
+                series: {
+                  orderBy: [asc(trainings_series.order)],
+                },
+              },
+            },
+            superset: {
+              with: {
+                exercices: {
+                  with: {
+                    exercice: true,
+                    series: {
+                      orderBy: [asc(trainings_series.order)],
+                    },
+                  },
+                  orderBy: [asc(trainings_exercices.order)],
+                },
+              },
+            },
+          },
+          orderBy: [asc(trainings_steps.order)],
         },
       },
-      sessions: true,
-    },
-    where: (trainings, { eq, and }) =>
-      and(eq(trainings.id, id), eq(trainings.userId, userId)),
-  })
-  if (!training) throw new Error("Can't get the requested training.")
-  return training
-}
+      where: (trainings, { eq, and }) =>
+        and(eq(trainings.id, id), eq(trainings.userId, user.id)),
+    })
+    if (!training) return notFound()
+    return training
+  }
+)
 
 export const createTraining = withValidation(
   createTrainingSchema,
@@ -61,306 +90,254 @@ export const createTraining = withValidation(
   }
 )
 
-export const deleteTraining = withValidation(z.string(), async (id, user) => {
-  const deletedExercices = await db
-    .delete(trainings_exercices)
-    .where(eq(trainings_exercices.trainingId, id))
-    .returning({ id: trainings_exercices.id })
-  await db.delete(trainings_series).where(
-    inArray(
-      trainings_series.trainingsExercicesId,
-      deletedExercices.map((d) => d.id)
-    )
-  )
+export const deleteTraining = withValidation(
+  trainingSchema.pick({ id: true }),
+  async ({ id }, user) => {
+    await db
+      .delete(trainings)
+      .where(and(eq(trainings.id, id), eq(trainings.userId, user.id)))
 
-  const deletedSupersets = await db
-    .delete(trainings_supersets)
-    .where(eq(trainings_supersets.trainingId, id))
-    .returning({ id: trainings_supersets.id })
-  await db.delete(trainings_supersets_exercices).where(
-    inArray(
-      trainings_supersets_exercices.trainingSupersetId,
-      deletedSupersets.map((d) => d.id)
-    )
-  )
-  const deletedSupersetsRounds = await db
-    .delete(trainings_supersets_rounds)
-    .where(
-      inArray(
-        trainings_supersets_rounds.trainingSupersetId,
-        deletedSupersets.map((d) => d.id)
-      )
-    )
-    .returning({ id: trainings_supersets_rounds.id })
-  await db.delete(trainings_supersets_series).where(
-    inArray(
-      trainings_supersets_series.trainingsSupersetsRoundsId,
-      deletedSupersetsRounds.map((d) => d.id)
-    )
-  )
-
-  await db.delete(trainings).where(eq(trainings.id, id))
-
-  revalidatePath("/")
-  revalidatePath(`/trainings/${id}`)
-  redirect("/")
-})
+    revalidatePath("/")
+    revalidatePath(`/trainings/${id}`)
+    redirect("/")
+  }
+)
 
 export const editTraining = withValidation(
   editTrainingSchema,
   async (data, user) => {
-    const before = await getTraining(data.id, user.id)
-    // UPDATE TRAINING
-    await db
-      .update(trainings)
-      .set({
-        title: data.title,
-      })
-      .where(eq(trainings.id, data.id))
+    await updateTraining(data)
 
-    await updateExercices(data, before)
-    await updateSupersets(data, before)
+    data.steps = data.steps?.map<(typeof data.steps)[0]>((step, index) => ({
+      ...step,
+      order: index,
+    }))
 
-    revalidatePath("/")
-    revalidatePath(`/trainings/${data.id}`)
-    revalidatePath(`/trainings/${data.id}/edit`)
+    const savedSteps = await upsertSteps(data)
+    if (!savedSteps) return updateCache(data)
+    data.steps = data.steps?.map<(typeof data.steps)[0]>((step, index) => ({
+      ...step,
+      ...(savedSteps.find(
+        (savedStep) => savedStep.order === step.order
+      ) as (typeof savedSteps)[0]),
+    }))
+
+    const savedSupersets = await upsertSuperset(data)
+
+    data.steps = data.steps?.map<(typeof data.steps)[0]>((step) => {
+      if (step.superset)
+        return {
+          ...step,
+          superset: {
+            ...step.superset,
+            ...(savedSupersets?.find(
+              (savedSuperset) => savedSuperset.trainingStepId === step.id
+            ) as typeof savedSupersets),
+            exercices: step.superset.exercices?.map((ex, index) => ({
+              ...ex,
+              order: index,
+            })),
+          },
+        }
+
+      return step
+    })
+
+    const savedExercices = await upsertExercice(data)
+    if (!savedExercices) return updateCache(data)
+
+    data.steps = data.steps?.map<(typeof data.steps)[0]>((step) => {
+      if (step.exercice)
+        return {
+          ...step,
+          exercice: {
+            ...step.exercice,
+            id: savedExercices.find(
+              (savedExercice) => savedExercice.trainingStepId === step.id
+            )?.id,
+          },
+        }
+      return {
+        ...step,
+        superset: {
+          ...(step.superset as TrainingSuperset),
+          exercices: step.superset?.exercices?.map((exercice) => ({
+            ...exercice,
+            id: savedExercices.find(
+              (savedExercice) =>
+                savedExercice.supersetId === step.superset?.id &&
+                savedExercice.order === exercice.order
+            )?.id,
+          })),
+        },
+      }
+    })
+
+    await upsertSeries(data)
+
+    updateCache(data)
   }
 )
 
-async function updateExercices(
-  data: EditTrainingSchema,
-  training: Awaited<ReturnType<typeof getTraining>>
-) {
-  // INSERT NEW EXERCICE / UPDATE EXISTING EXERCICE
-  await Promise.all(
-    data.trainings_exercices?.map(async (tExercice) => {
-      await createOrUpdateExercice(training, tExercice)
-    }) ?? []
-  )
-
-  // DELETE REMOVED EXERCICE WITH SERIES
-  const exercicesToDelete = training?.trainings_exercices.filter(
-    (beforeTExercice) =>
-      !data.trainings_exercices?.map((s) => s.id).includes(beforeTExercice.id)
-  )
-  for (const exerciceToDelete of exercicesToDelete) {
-    await db
-      .delete(trainings_exercices)
-      .where(eq(trainings_exercices.id, exerciceToDelete.id))
-    await db
-      .delete(trainings_series)
-      .where(eq(trainings_series.trainingsExercicesId, exerciceToDelete.id))
-  }
+const updateTraining = async (data: EditTraining) => {
+  await db
+    .update(trainings)
+    .set({
+      title: data.title,
+    })
+    .where(eq(trainings.id, data.id))
 }
 
-async function createOrUpdateExercice(
-  training: Awaited<ReturnType<typeof getTraining>>,
-  tExercice: NonNullable<EditTrainingSchema["trainings_exercices"]>[number]
-) {
-  let inserted: Partial<TrainingExercice>
-  inserted = (
-    await db
-      .insert(trainings_exercices)
-      .values({
-        id: tExercice.id,
-        exerciceId: tExercice.exerciceId,
-        trainingId: training.id,
-        order: tExercice.order,
-      })
+const upsertSteps = async (data: EditTraining) => {
+  await db
+    .delete(trainings_steps)
+    .where(
+      notInArray(
+        trainings_steps.id,
+        (data.steps?.filter((step) => !!step.id)?.map((step) => step.id) ??
+          []) as string[]
+      )
+    )
+  if (data.steps?.length)
+    return await db
+      .insert(trainings_steps)
+      .values(
+        data.steps?.map<TrainingStep>((step) => ({
+          id: step.id as string,
+          order: step.order,
+          trainingId: data.id,
+        })) ?? []
+      )
       .onConflictDoUpdate({
-        target: trainings_exercices.id,
+        target: trainings_steps.id,
         set: {
-          order: tExercice.order,
+          order: sql`excluded.order`,
         },
       })
       .returning()
-  )[0]
-
-  // UPSERT SERIE
-  tExercice.series?.forEach(async (serie) => {
-    await db
-      .insert(trainings_series)
-      .values({
-        id: serie.id,
-        repetition: serie.repetition ?? null,
-        time: serie.time ?? null,
-        rest: serie.rest,
-        weight: serie.weight ?? null,
-        order: serie.order,
-        trainingsExercicesId: tExercice.id ?? inserted.id,
-      })
-      .onConflictDoUpdate({
-        target: trainings_series.id,
-        set: {
-          repetition: serie.repetition ?? null,
-          time: serie.time ?? null,
-          rest: serie.rest,
-          weight: serie.weight ?? null,
-          order: serie.order,
-        },
-      })
-  })
-  // DELETE REMOVED SERIES
-  const seriesToDelete = training?.trainings_exercices
-    .find((beforeTExercice) => beforeTExercice.id === tExercice.id)
-    ?.series.filter(
-      (serie) => !tExercice.series?.map((s) => s.id).includes(serie.id)
-    )
-  seriesToDelete?.forEach(
-    async (serieToDelete) =>
-      await db
-        .delete(trainings_series)
-        .where(eq(trainings_series.id, serieToDelete.id))
-  )
 }
 
-async function updateSupersets(
-  data: EditTrainingSchema,
-  training: Awaited<ReturnType<typeof getTraining>>
-) {
-  await Promise.all(
-    data.trainings_supersets?.map(async (tSuperset) => {
-      // UPSERT SUPERSET
-      const inserted = (
-        await db
-          .insert(trainings_supersets)
-          .values({
-            id: tSuperset.id,
-            trainingId: training.id,
-            order: tSuperset.order,
-            intervalRest: tSuperset.intervalRest,
-            rest: tSuperset.rest,
-          })
-          .onConflictDoUpdate({
-            target: trainings_supersets.id,
-            set: {
-              order: tSuperset.order,
-            },
-          })
-          .returning()
-      )[0]
-      // UPSERT EXERCICES
-      await Promise.all(
-        tSuperset.exercices.map(async (sExercice) => {
-          await db
-            .insert(trainings_supersets_exercices)
-            .values({
-              id: sExercice.id,
-              order: sExercice.order,
-              exerciceId: sExercice.exerciceId,
-              trainingSupersetId: inserted.id,
-            })
-            .onConflictDoUpdate({
-              target: trainings_supersets_exercices.id,
-              set: {
-                order: sExercice.order,
-              },
-            })
-        })
-      )
-      // UPSERT ROUNDS
-      await Promise.all(
-        tSuperset.rounds.map(async (round) => {
-          const insertedRound = (
-            await db
-              .insert(trainings_supersets_rounds)
-              .values({
-                id: round.id,
-                order: round.order,
-                trainingSupersetId: inserted.id,
-              })
-              .onConflictDoUpdate({
-                target: trainings_supersets_rounds.id,
-                set: {
-                  order: round.order,
-                },
-              })
-              .returning()
-          )[0]
-          //---- UPSERT SERIES
-          round.series.forEach(async (serie) => {
-            await db
-              .insert(trainings_supersets_series)
-              .values({
-                id: serie.id,
-                order: serie.order,
-                repetition: serie.repetition,
-                time: serie.time,
-                weight: serie.weight,
-                trainingsSupersetsRoundsId: insertedRound.id,
-              })
-              .onConflictDoUpdate({
-                target: trainings_supersets_series.id,
-                set: {
-                  order: serie.order,
-                  repetition: serie.repetition ?? null,
-                  time: serie.time ?? null,
-                  weight: serie.weight,
-                },
-              })
-          })
-        })
-      )
-    }) ?? []
-  )
-
-  // FIXME: ALL REMOVED CAN BE DELETED WHEN CASCADE DELETE WORK
-  // DELETE REMOVED SUPERSET
-  const supersetsToDelete = training?.trainings_supersets.filter(
-    (beforeTSuperset) =>
-      !data.trainings_supersets?.map((s) => s.id).includes(beforeTSuperset.id)
-  )
-  supersetsToDelete?.forEach(async (supersetToDelete) => {
+const upsertSuperset = async (data: EditTraining) => {
+  const toDeleteIds = (data.steps
+    ?.filter((step) => !!step.superset && !!step.superset.id)
+    ?.map((step) => step.superset?.id) ?? []) as string[]
+  if (toDeleteIds.length)
     await db
       .delete(trainings_supersets)
-      .where(eq(trainings_supersets.id, supersetToDelete.id))
-  })
-  // DELETE REMOVED EXERCICES
-  const exercicesToDelete = training?.trainings_supersets.flatMap(
-    (superset) => {
-      return superset.exercices.filter(
-        (exercice) =>
-          !data.trainings_supersets
-            ?.flatMap((tSuperset) => tSuperset.exercices.map((ex) => ex.id))
-            .includes(exercice.id)
+      .where(notInArray(trainings_supersets.id, toDeleteIds))
+
+  if (data.steps?.filter((step) => !!step.superset)?.length)
+    return await db
+      .insert(trainings_supersets)
+      .values(
+        data.steps
+          ?.filter(
+            (
+              step
+            ): step is EditTrainingStep & { superset: EditTrainingSuperset } =>
+              !!step.superset
+          )
+          .map<EditTrainingSuperset>(({ id, superset }) => ({
+            id: superset.id as string,
+            intervalRest: superset.intervalRest,
+            nbRound: superset.nbRound,
+            rest: superset.rest,
+            trainingStepId: id,
+          })) ?? []
+      )
+      .onConflictDoUpdate({
+        target: trainings_supersets.id,
+        set: {
+          intervalRest: sql`excluded.interval_rest`,
+          nbRound: sql`excluded.nb_round`,
+          rest: sql`excluded.rest`,
+        },
+      })
+      .returning()
+}
+
+const upsertExercice = async (data: EditTraining) => {
+  const values = data.steps?.flatMap<Partial<TrainingExercice>>(
+    ({ id, exercice, superset }) => {
+      if (exercice) return { ...exercice, series: [], trainingStepId: id }
+      return (
+        superset?.exercices?.map((exercice) => ({
+          ...exercice,
+          series: [],
+          supersetId: superset.id,
+        })) ?? []
       )
     }
   )
-  exercicesToDelete.forEach(async (exerciceToDelete) => {
+
+  const toDeleteIds = (values
+    ?.filter((exercice) => !!exercice.id)
+    ?.map((exercice) => exercice.id) ?? []) as string[]
+  if (toDeleteIds.length)
     await db
-      .delete(trainings_supersets_exercices)
-      .where(eq(trainings_supersets_exercices.id, exerciceToDelete.id))
-  })
-  // DELETE REMOVED ROUNDS
-  const roundsToDelete = training?.trainings_supersets.flatMap((superset) => {
-    return superset.rounds.filter(
-      (round) =>
-        !data.trainings_supersets
-          ?.flatMap((tSuperset) => tSuperset.rounds.map((r) => r.id))
-          .includes(round.id)
-    )
-  })
-  roundsToDelete.forEach(async (roundToDelete) => {
-    await db
-      .delete(trainings_supersets_rounds)
-      .where(eq(trainings_supersets_rounds.id, roundToDelete.id))
-  })
-  // DELETE REMOVED SERIES
-  const seriessToDelete = training?.trainings_supersets.flatMap((superset) => {
-    return superset.rounds.flatMap((round) => {
-      return round.series.filter(
-        (serie) =>
-          !data.trainings_supersets
-            ?.flatMap((tSuperset) =>
-              tSuperset.rounds.flatMap((round) => round.series.map((s) => s.id))
-            )
-            .includes(serie.id)
+      .delete(trainings_exercices)
+      .where(notInArray(trainings_exercices.id, toDeleteIds))
+
+  if (values?.length)
+    return db
+      .insert(trainings_exercices)
+      .values(values as any) // FIXME: typing any
+      .onConflictDoUpdate({
+        target: trainings_exercices.id,
+        set: { order: sql`excluded.order` },
+      })
+      .returning()
+}
+
+const upsertSeries = async (data: EditTraining) => {
+  const values =
+    data.steps?.flatMap<TrainingSerie>((step) => {
+      if (step.exercice)
+        return (
+          step.exercice.series?.map((serie) => ({
+            ...(serie as TrainingSerie),
+            trainingExerciceId: step.exercice!.id!,
+          })) ?? []
+        )
+
+      return (
+        step.superset?.exercices?.flatMap((exercice) => {
+          return (
+            exercice.series?.map((serie) => ({
+              ...(serie as TrainingSerie),
+              trainingExerciceId: exercice.id!,
+            })) ?? []
+          )
+        }) ?? []
       )
-    })
-  })
-  seriessToDelete.forEach(async (serieToDelete) => {
+    }) ?? []
+
+  const toDeleteIds = (values
+    ?.filter((serie) => !!serie.id)
+    ?.map((serie) => serie.id) ?? []) as string[]
+  if (toDeleteIds.length)
     await db
-      .delete(trainings_supersets_series)
-      .where(eq(trainings_supersets_series.id, serieToDelete.id))
-  })
+      .delete(trainings_series)
+      .where(notInArray(trainings_series.id, toDeleteIds))
+
+  return await db
+    .insert(trainings_series)
+    .values(values)
+    .onConflictDoUpdate({
+      target: trainings_series.id,
+      set: {
+        order: sql`excluded.order`,
+        repetition: sql`excluded.repetition`,
+        rest: sql`excluded.rest`,
+        time: sql`excluded.time`,
+        weight: sql`excluded.weight`,
+      },
+    })
+    .returning()
+}
+
+function updateCache(data: EditTraining) {
+  revalidatePath("/")
+  revalidatePath(`/trainings/${data.id}`)
+  revalidatePath(`/trainings/${data.id}/edit`)
 }

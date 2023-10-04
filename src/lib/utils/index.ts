@@ -111,3 +111,7 @@ export function formatUsername(user: {
   if (user.lastname) return user.lastname
   return user.emailAddresses[0].emailAddress
 }
+
+export function sortByOrder<Data extends { order: number }>(arr: Array<Data>) {
+  return arr.sort((a, b) => a.order - b.order)
+}

@@ -10,46 +10,35 @@ import {
   deleteTraining,
   editTraining,
 } from "~/lib/db/actions/trainings.actions"
-import {
-  EditTrainingSchema,
-  Exercice,
-  editTrainingSchema,
-} from "~/lib/db/schema"
-import { MetadataFormPart } from "./MetadataFormPart"
-import { ExercicesFormPart } from "./ExercicesFormPart"
-import { Button, buttonVariants } from "~/components/ui/button"
+import { MetadataFormPart } from "./EditTrainingForm/MetadataFormPart"
+import { ExercicesFormPart } from "./EditTrainingForm/ExercicesFormPart"
+import { buttonVariants } from "~/components/ui/button"
 import Link from "next/link"
-import { RotateCw, Trash, Undo2 } from "lucide-react"
+import { EditTrainingHeader } from "./EditTrainingForm/EditTrainingHeader"
+import { Exercice } from "~/lib/db/schema/exercices.schema"
+import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
+import { editTrainingSchema } from "~/lib/db/validation/training.validator"
 
 export const EditTrainingForm = ({
   onSubmit,
   defaultValues,
   exercices,
-  deletion,
 }: {
   onSubmit: typeof editTraining
-  deletion: typeof deleteTraining
-  defaultValues: EditTrainingSchema
+  defaultValues: EditTraining
   exercices: Exercice[]
 }): ReactElement => {
-  const form = useForm<EditTrainingSchema>({
+  const form = useForm<EditTraining>({
     resolver: zodResolver(editTrainingSchema as any), // FIXME: remove cast when solution for Zod Readonly
     defaultValues,
   })
 
   const [isUpdatePending, startUpdateTransition] = useTransition()
-  const [isDeletePending, startDeleteTransition] = useTransition()
 
-  const handleSubmit = (values: EditTrainingSchema) => {
+  const handleSubmit = (values: EditTraining) => {
     startUpdateTransition(async () => {
       await onSubmit(values)
       redirect(`/trainings/${values.id}`)
-    })
-  }
-
-  const onDelete = () => {
-    startDeleteTransition(async () => {
-      await deletion(defaultValues.id)
     })
   }
 
@@ -59,36 +48,10 @@ export const EditTrainingForm = ({
         onSubmit={form.handleSubmit(handleSubmit)}
         className="flex flex-col gap-2"
       >
-        <div className="flex w-full items-center justify-between gap-2">
-          <h2 className="w-full text-2xl font-semibold leading-none tracking-tight">
-            {defaultValues.title}
-          </h2>
-          <div className="flex w-full justify-end gap-2">
-            <Link
-              href={`/trainings/${defaultValues.id}`}
-              className={buttonVariants({
-                variant: "outline",
-                size: "icon",
-              })}
-            >
-              <Undo2 />
-            </Link>
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              disabled={isDeletePending}
-              onClick={onDelete}
-            >
-              {isDeletePending ? (
-                <RotateCw className="h-5 w-5 animate-spin" />
-              ) : (
-                <Trash />
-              )}
-            </Button>
-            <SubmitButton isPending={isUpdatePending} text={false} />
-          </div>
-        </div>
+        <EditTrainingHeader
+          training={defaultValues}
+          isLoading={isUpdatePending}
+        />
         <MetadataFormPart />
         <ExercicesFormPart exercices={exercices} />
         <div className="flex w-full justify-end gap-2">
@@ -100,7 +63,7 @@ export const EditTrainingForm = ({
           >
             Annuler
           </Link>
-          <SubmitButton isPending={isUpdatePending} />
+          <SubmitButton isLoading={isUpdatePending} />
         </div>
       </form>
     </Form>

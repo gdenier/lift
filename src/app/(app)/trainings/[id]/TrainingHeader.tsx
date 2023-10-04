@@ -2,14 +2,20 @@ import { Edit } from "lucide-react"
 import Link from "next/link"
 import { buttonVariants } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import { getTraining } from "~/lib/db/actions/trainings.actions"
+import { getTraining } from "~/lib/db/actions/trainings.actions.old"
+import { Training } from "~/lib/db/schema"
 import { formatTime, formatWeight } from "~/lib/utils"
 
-export const TrainingHeader = ({
-  training,
-}: {
-  training: Awaited<ReturnType<typeof getTraining>>
-}) => {
+export const TrainingHeader = ({ training }: { training: Training }) => {
+  const nbSeries =
+    training.steps?.reduce(
+      (total, step) =>
+        total +
+        (step.exercice?.series?.length ??
+          (step.superset?.exercices?.length ?? 0) *
+            (step.superset?.nbRound ?? 0)),
+      0
+    ) ?? 0
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between">
@@ -23,50 +29,50 @@ export const TrainingHeader = ({
         </Link>
       </CardHeader>
       <CardContent className="flex flex-wrap justify-between gap-2">
-        <p>Réalisé {training?.sessions?.length ?? "X"} fois</p>
-        {training.sessions?.[0]?.createdAt ? (
-          <p>
-            Réalisé {training.sessions?.[0]?.createdAt.toLocaleString()} la
-            derniere fois
-          </p>
-        ) : null}
-        <p>{training.trainings_exercices.length} exercice(s)</p>
-        <p>
-          {training.trainings_exercices.reduce(
-            (total, tExercice) => total + tExercice.series.length,
-            0
-          )}{" "}
-          série(s)
-        </p>
+        <p>{training.steps?.length ?? 0} exercice(s)</p>
+        <p>{nbSeries} série(s)</p>
         <p>
           {formatWeight(
-            training.trainings_exercices.reduce(
-              (total, tExercice) =>
+            training.steps?.reduce(
+              (total, step) =>
                 total +
-                tExercice.series.reduce(
-                  (tWeight, serie) =>
-                    tWeight + (serie?.weight ?? 0) * (serie.repetition ?? 1),
+                (step.exercice?.series?.reduce(
+                  (tt, serie) => tt + (serie.weight ?? 0),
                   0
-                ),
+                ) ??
+                  step.superset?.exercices?.reduce(
+                    (tt, exercice) =>
+                      tt +
+                      (exercice?.series?.reduce(
+                        (ttt, serie) => ttt + (serie.weight ?? 0),
+                        0
+                      ) ?? 0),
+                    0
+                  ) ??
+                  0),
               0
-            )
+            ) ?? 0
           )}{" "}
           soulevé
         </p>
         <p>
           ~
           {formatTime(
-            training.trainings_exercices.reduce(
-              (total, tExercice) =>
+            (training.steps?.reduce(
+              (total, step) =>
                 total +
-                tExercice.series.reduce(
-                  // 60 represent the average execution time
-                  // TODO: set default time on account level
-                  (tTime, serie) => tTime + (serie?.rest ?? 120) + 60,
+                (step.exercice?.series?.reduce(
+                  (tt, serie) => tt + (serie.rest ?? 0),
                   0
-                ),
+                ) ??
+                  (step.superset?.exercices?.length ?? 0) *
+                    (step.superset?.rest ?? 0) +
+                    ((step.superset?.exercices?.length ?? 0) *
+                      (step.superset?.nbRound ?? 0) -
+                      (step.superset?.exercices?.length ?? 0)) *
+                      (step.superset?.intervalRest ?? 0)),
               0
-            )
+            ) ?? 0) + (nbSeries * 30 ?? 0)
           )}{" "}
           d&apos;entrainement
         </p>

@@ -22,3 +22,9 @@ export const withValidation = <Schema extends ZodType<any, any, any>, Return>(
     }
   }
 }
+
+export const log = (data: any) => {
+  console.log("----------\n")
+  console.log(JSON.stringify(data, null, 2))
+  console.log("----------\n")
+}

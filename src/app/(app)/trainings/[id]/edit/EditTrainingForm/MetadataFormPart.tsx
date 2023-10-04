@@ -2,7 +2,6 @@
 
 import { ReactElement } from "react"
 import { useFormContext } from "react-hook-form"
-import { z } from "zod"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import {
   FormField,
@@ -12,10 +11,10 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { EditTrainingSchema, editTrainingSchema } from "~/lib/db/schema"
+import { EditTraining } from "~/lib/db/schema/training/trainings.schema"
 
 export const MetadataFormPart = (): ReactElement => {
-  const form = useFormContext<EditTrainingSchema>()
+  const form = useFormContext<EditTraining>()
 
   return (
     <Card>
