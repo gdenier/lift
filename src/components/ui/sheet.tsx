@@ -13,13 +13,7 @@ const SheetTrigger = SheetPrimitive.Trigger
 
 const SheetClose = SheetPrimitive.Close
 
-const SheetPortal = ({
-  className,
-  ...props
-}: SheetPrimitive.DialogPortalProps) => (
-  <SheetPrimitive.Portal className={cn(className)} {...props} />
-)
-SheetPortal.displayName = SheetPrimitive.Portal.displayName
+const SheetPortal = SheetPrimitive.Portal
 
 const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Overlay>,
@@ -55,7 +49,7 @@ const sheetVariants = cva(
   }
 )
 
-export interface SheetContentProps
+interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
@@ -98,7 +92,13 @@ const SheetFooter = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex  justify-end space-x-2", className)} {...props} />
+  <div
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    )}
+    {...props}
+  />
 )
 SheetFooter.displayName = "SheetFooter"
 
@@ -128,6 +128,8 @@ SheetDescription.displayName = SheetPrimitive.Description.displayName
 
 export {
   Sheet,
+  SheetPortal,
+  SheetOverlay,
   SheetTrigger,
   SheetClose,
   SheetContent,

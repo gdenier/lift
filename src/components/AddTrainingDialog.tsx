@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { createTrainingSchema } from "~/lib/db/validation/training.validator"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { createTraining } from "~/lib/db/actions/trainings.actions.old"
+import { createTraining } from "~/lib/db/actions/trainings.actions"
 import { createFormData } from "~/lib/utils"
 import { redirect } from "next/navigation"
 import {
@@ -110,7 +110,7 @@ export const AddTrainingDialog = ({
                 </FormItem>
               )}
             />
-            <SubmitButton isPending={isPending} />
+            <SubmitButton isLoading={isPending} />
           </form>
         </Form>
       </DialogContent>

@@ -93,7 +93,7 @@ export const AddProfileWeightForm = ({
               max={150000}
               min={30000}
             />
-            <SubmitButton isPending={isPending} />
+            <SubmitButton isLoading={isPending} />
           </form>
         </Form>
       </DialogContent>
