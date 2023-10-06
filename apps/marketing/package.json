@@ -1,5 +1,5 @@
 {
-  "name": "marketing",
+  "name": "lift-marketing",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -10,6 +10,9 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^3.2.3"
+    "@astrojs/tailwind": "^5.0.1",
+    "@fontsource/inter": "^5.0.12",
+    "astro": "^3.2.3",
+    "tailwindcss": "3.3.3"
   }
 }

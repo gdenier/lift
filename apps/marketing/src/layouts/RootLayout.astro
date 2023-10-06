@@ -1,0 +1,25 @@
+---
+import "@fontsource/inter"
+
+export interface Props {
+  title?: string
+}
+
+const { title } = Astro.props
+---
+
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Astro description" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#000" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Lift</title>
+  </head>
+  <body class="overflow-x-hidden tracking-wide md:text-lg bg-gray-100">
+    <slot />
+  </body>
+</html>
