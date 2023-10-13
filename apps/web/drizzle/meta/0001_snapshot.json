@@ -1,0 +1,350 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "id": "b6038a8d-451f-44ae-bc5b-897b3ed38ff8",
+  "prevId": "24f1fb28-93de-493a-b663-043e8cd873b0",
+  "tables": {
+    "lift_exercices": {
+      "name": "lift_exercices",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "ulid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_ulid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "lift_trainings": {
+      "name": "lift_trainings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "ulid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_ulid()"
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "lift_trainings_exercices": {
+      "name": "lift_trainings_exercices",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "ulid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_ulid()"
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "exercice_id": {
+          "name": "exercice_id",
+          "type": "ulid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "superset_id": {
+          "name": "superset_id",
+          "type": "ulid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "training_step_id": {
+          "name": "training_step_id",
+          "type": "ulid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "lift_trainings_exercices_exercice_id_lift_exercices_id_fk": {
+          "name": "lift_trainings_exercices_exercice_id_lift_exercices_id_fk",
+          "tableFrom": "lift_trainings_exercices",
+          "tableTo": "lift_exercices",
+          "columnsFrom": [
+            "exercice_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "lift_trainings_exercices_superset_id_lift_trainings_supersets_id_fk": {
+          "name": "lift_trainings_exercices_superset_id_lift_trainings_supersets_id_fk",
+          "tableFrom": "lift_trainings_exercices",
+          "tableTo": "lift_trainings_supersets",
+          "columnsFrom": [
+            "superset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "lift_trainings_exercices_training_step_id_lift_trainings_steps_id_fk": {
+          "name": "lift_trainings_exercices_training_step_id_lift_trainings_steps_id_fk",
+          "tableFrom": "lift_trainings_exercices",
+          "tableTo": "lift_trainings_steps",
+          "columnsFrom": [
+            "training_step_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "lift_trainings_exercices_series": {
+      "name": "lift_trainings_exercices_series",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "ulid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_ulid()"
+        },
+        "weight": {
+          "name": "weight",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "repetition": {
+          "name": "repetition",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "time": {
+          "name": "time",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rest": {
+          "name": "rest",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "training_exercice_id": {
+          "name": "training_exercice_id",
+          "type": "ulid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "lift_trainings_exercices_series_training_exercice_id_lift_trainings_exercices_id_fk": {
+          "name": "lift_trainings_exercices_series_training_exercice_id_lift_trainings_exercices_id_fk",
+          "tableFrom": "lift_trainings_exercices_series",
+          "tableTo": "lift_trainings_exercices",
+          "columnsFrom": [
+            "training_exercice_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "lift_trainings_steps": {
+      "name": "lift_trainings_steps",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "ulid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_ulid()"
+        },
+        "order": {
+          "name": "order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "training_id": {
+          "name": "training_id",
+          "type": "ulid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "lift_trainings_steps_training_id_lift_trainings_id_fk": {
+          "name": "lift_trainings_steps_training_id_lift_trainings_id_fk",
+          "tableFrom": "lift_trainings_steps",
+          "tableTo": "lift_trainings",
+          "columnsFrom": [
+            "training_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "lift_trainings_supersets": {
+      "name": "lift_trainings_supersets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "ulid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_ulid()"
+        },
+        "rest": {
+          "name": "rest",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "interval_rest": {
+          "name": "interval_rest",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nb_round": {
+          "name": "nb_round",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "training_step_id": {
+          "name": "training_step_id",
+          "type": "ulid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "lift_trainings_supersets_training_step_id_lift_trainings_steps_id_fk": {
+          "name": "lift_trainings_supersets_training_step_id_lift_trainings_steps_id_fk",
+          "tableFrom": "lift_trainings_supersets",
+          "tableTo": "lift_trainings_steps",
+          "columnsFrom": [
+            "training_step_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "lift_profile_weights": {
+      "name": "lift_profile_weights",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "ulid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_ulid()"
+        },
+        "value": {
+          "name": "value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}

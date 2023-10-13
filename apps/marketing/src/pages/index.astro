@@ -1,15 +1,25 @@
 ---
 import Layout from "../layouts/Layout.astro"
-import NotifyForm from "../components/Landing/NotifyForm.astro"
+import {Form} from "../components/Landing/Form"
 ---
 
 <Layout>
-	<div class="container">
+	<div class="container relative min-h-[100svh] w-[100dvw] overflow-y-visible">
+		<img
+    id="blob-1"
+    src="/blob-1.svg"
+    class="absolute -left-[10dvw] -top-[10svh] -z-20 h-[80svh] min-h-[300px] w-[80svh] min-w-[300px] blur-[80px]"
+  />
+  <img
+    id="blob-2"
+    src="/blob-2.svg"
+    class="absolute left-[50dvw] top-[50svh] -z-20 h-[50svh] min-h-[300px] w-[55svh] min-w-[300px] blur-[80px]"
+  />
 		<div class="flex flex-col gap-4 pt-24 md:pt-52 md:px-32 max-w-3xl">
 			<p class="text-xs text-gray-500 uppercase">Bientot disponible</p>
 			<p class="pb-4">Boostez vos performances, atteignez vos objectifs avec Lift !</p>
 			<h2 class="text-3xl font-bold">Soyez le.a premier.e prévenu.e</h2>
-			<NotifyForm />
+			<Form client:load />
 			<div class="flex gap-6 pt-4">
 				<div class="w-6 h-6 text-gray-600">
 					<a href="https://github.com/gdenier/lift">

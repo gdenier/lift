@@ -1,5 +1,5 @@
 ---
-import "@fontsource/inter"
+import "@fontsource/lato"
 
 export interface Props {
   title?: string
@@ -19,7 +19,7 @@ const { title } = Astro.props
     <meta name="generator" content={Astro.generator} />
     <title>Lift</title>
   </head>
-  <body class="overflow-x-hidden tracking-wide md:text-lg bg-gray-100">
+  <body class="overflow-hidden tracking-wide md:text-lg bg-gray-100">
     <slot />
   </body>
 </html>
