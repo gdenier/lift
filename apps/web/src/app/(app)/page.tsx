@@ -21,7 +21,7 @@ export default async function Home() {
     .where(eq(trainings.userId, userId))
 
   return (
-    <div className="w-full">
+    <div className="flex w-full flex-col gap-2">
       <Card>
         <CardHeader>
           <CardTitle>Bonjour !</CardTitle>
@@ -29,7 +29,7 @@ export default async function Home() {
         </CardHeader>
       </Card>
       <InstallAppCard />
-      <Card className="mt-2">
+      <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Mes entrainements</CardTitle>
           <AddTrainingDialog onSubmit={createTraining} />

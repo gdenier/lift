@@ -1,13 +1,15 @@
 "use client"
 
-import { ReactElement, useState } from "react"
+import { ReactElement, useState, useEffect } from "react"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button"
 
 export const InstallAppCard = (): ReactElement | null => {
-  const [show, setShow] = useState(
-    JSON.parse(localStorage.getItem("show-install") ?? "true")
-  )
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    setShow(JSON.parse(localStorage.getItem("show-install") ?? "true"))
+  }, [])
 
   const handleResponse = (res: boolean) => {
     if (!res) {
