@@ -4,6 +4,7 @@ import { ArrowRightSquare } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { AddTrainingDialog } from "~/components/AddTrainingDialog"
+import { InstallAppCard } from "~/components/InstallAppCard"
 import { Timer } from "~/components/Timer"
 import { buttonVariants } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
@@ -27,6 +28,7 @@ export default async function Home() {
           <p>Quel entrainement allez-vous faire aujourd&apos;hui ?</p>
         </CardHeader>
       </Card>
+      <InstallAppCard />
       <Card className="mt-2">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Mes entrainements</CardTitle>
